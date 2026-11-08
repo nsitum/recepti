@@ -1,0 +1,75 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isAdmin() { return signedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'; }
+    function validCategory(data) {
+      return data.keys().hasOnly(['name', 'emoji', 'description', 'createdAt'])
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 80
+        && data.emoji is string && data.description is string
+        && data.createdAt is timestamp;
+    }
+    function validRecipe(data) {
+      return data.keys().hasOnly(['categoryId', 'title', 'description', 'imageUrl', 'authorId', 'authorEmail', 'createdAt', 'updatedAt'])
+        && data.categoryId is string
+        && exists(/databases/$(database)/documents/categories/$(data.categoryId))
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 120
+        && data.description is string && data.description.size() > 0 && data.description.size() <= 10000
+        && data.imageUrl is string && data.imageUrl.matches('https://.*')
+        && data.authorId is string && data.authorEmail is string
+        && data.createdAt is timestamp && data.updatedAt is timestamp;
+    }
+
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow create: if isAdmin() && validCategory(request.resource.data) && request.resource.data.createdAt == request.time;
+      allow update: if isAdmin() && validCategory(request.resource.data) && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isAdmin();
+    }
+    match /recipes/{recipeId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && validRecipe(request.resource.data)
+        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.authorEmail == request.auth.token.email
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if isAdmin()
+        && validRecipe(request.resource.data)
+        && request.resource.data.authorId == resource.data.authorId
+        && request.resource.data.authorEmail == resource.data.authorEmail
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if isAdmin();
+    }
+    match /ratings/{ratingId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['recipeId', 'userId', 'value', 'updatedAt'])
+        && ratingId == request.resource.data.recipeId + '_' + request.auth.uid
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.value is int
+        && request.resource.data.value >= 1 && request.resource.data.value <= 5
+        && request.resource.data.updatedAt == request.time
+        && get(/databases/$(database)/documents/recipes/$(request.resource.data.recipeId)).data.authorId != request.auth.uid;
+      allow update: if signedIn()
+        && ratingId == resource.data.recipeId + '_' + request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['value', 'updatedAt'])
+        && request.resource.data.value is int
+        && request.resource.data.value >= 1 && request.resource.data.value <= 5
+        && request.resource.data.updatedAt == request.time
+        && get(/databases/$(database)/documents/recipes/$(resource.data.recipeId)).data.authorId != request.auth.uid;
+      allow delete: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+    }
+    match /users/{userId} {
+      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+      allow create: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly(['email', 'role', 'createdAt'])
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.role == 'user'
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if isAdmin();
+    }
+  }
+}

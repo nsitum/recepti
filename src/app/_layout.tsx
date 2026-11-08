@@ -1,10 +1,11 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { colors } from '@/theme/app-theme';
+import { AuthProvider } from '@/contexts/auth-context';
 
 export default function RootLayout() {
   return (
-    <>
+    <AuthProvider>
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerStyle: { backgroundColor: colors.background }, headerShadowVisible: false, headerTintColor: colors.text, headerTitleStyle: { fontWeight: '800' }, contentStyle: { backgroundColor: colors.background }, animation: 'slide_from_right' }}>
         <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -16,6 +17,6 @@ export default function RootLayout() {
         <Stack.Screen name="auth/register" options={{ title: 'Registracija', presentation: 'modal' }} />
         <Stack.Screen name="admin/categories" options={{ title: 'Kategorije' }} />
       </Stack>
-    </>
+    </AuthProvider>
   );
 }

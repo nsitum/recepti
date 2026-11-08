@@ -2,15 +2,19 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View, type PressableProps, type TextInputProps } from 'react-native';
+import { useAuth } from '@/contexts/auth-context';
 import { colors, radius, spacing } from '@/theme/app-theme';
 
-export function PrimaryButton({ title, variant = 'primary', ...props }: PressableProps & { title: string; variant?: 'primary' | 'outline' | 'danger' }) {
-  return <Pressable accessibilityRole="button" {...props} style={({ pressed }) => [styles.button, variant === 'outline' && styles.outline, variant === 'danger' && styles.danger, pressed && styles.pressed, props.disabled && styles.disabled]}><Text style={[styles.buttonText, variant === 'outline' && styles.outlineText]}>{title}</Text></Pressable>;
+export function PrimaryButton({ title, variant = 'primary', busy = false, ...props }: PressableProps & { title: string; variant?: 'primary' | 'outline' | 'danger'; busy?: boolean }) {
+  return <Pressable accessibilityRole="button" {...props} disabled={busy || props.disabled} style={({ pressed }) => [styles.button, variant === 'outline' && styles.outline, variant === 'danger' && styles.danger, pressed && styles.pressed, (busy || props.disabled) && styles.disabled]}>{busy ? <ActivityIndicator color="#fff" /> : <Text style={[styles.buttonText, variant === 'outline' && styles.outlineText]}>{title}</Text>}</Pressable>;
 }
 export function Field({ label, error, ...props }: TextInputProps & { label: string; error?: string }) {
   return <View style={styles.field}><Text style={styles.label}>{label}</Text><TextInput placeholderTextColor={colors.textMuted} {...props} style={[styles.input, props.multiline && styles.multiline, error && styles.inputError, props.style]} />{error ? <Text style={styles.error}>{error}</Text> : null}</View>;
 }
 export function AuthLinks() {
+  const { user, role, loading, logout } = useAuth();
+  if (loading) return <ActivityIndicator size="small" color={colors.accent} />;
+  if (user) return <View style={styles.authLinks}><Text numberOfLines={1} style={styles.muted}>{role === 'admin' ? 'Administrator' : user.email}</Text><Pressable onPress={logout}><Text style={styles.link}>Odjava</Text></Pressable></View>;
   return <View style={styles.authLinks}><Pressable onPress={() => router.push('/auth/login')}><Text style={styles.link}>Prijava</Text></Pressable><Pressable onPress={() => router.push('/auth/register')}><Text style={styles.register}>Registracija</Text></Pressable></View>;
 }
 export function LoadingState() { return <View style={styles.center}><ActivityIndicator size="large" color={colors.accent} /><Text style={styles.muted}>Učitavanje…</Text></View>; }

@@ -1,2 +1,2 @@
-import { DemoAuthForm } from '@/components/demo-auth-form';
-export default function RegisterScreen() { return <DemoAuthForm mode="register" />; }
+import { AuthForm } from '@/components/auth-form';
+export default function RegisterScreen() { return <AuthForm mode="register" />; }

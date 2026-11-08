@@ -31,7 +31,14 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
+.env.*
+!.env.example
 .env*.local
+
+# Firebase administrator credentials must stay outside the repository
+*service-account*.json
+firebase-admin-key*.json
 
 # typescript
 *.tsbuildinfo
