@@ -7,5 +7,6 @@ const messages: Record<string, string> = {
   'auth/weak-password': 'Lozinka mora imati najmanje 6 znakova.',
   'auth/network-request-failed': 'Provjerite internetsku vezu i pokušajte ponovno.',
   'permission-denied': 'Nemate dopuštenje za ovu radnju.',
+  'failed-precondition': 'Firestore indeks još nije spreman. Pričekajte da u Firebase Consoleu dobije status Enabled pa pokušajte ponovno.',
 };
 export function firebaseErrorMessage(error: unknown) { if (error instanceof FirebaseError) return messages[error.code] ?? 'Firebase radnja nije uspjela.'; return error instanceof Error ? error.message : 'Dogodila se neočekivana pogreška.'; }

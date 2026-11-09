@@ -15,13 +15,13 @@ import {
   LoadingState,
   PrimaryButton,
 } from "@/components/app-ui";
-import { mockRecipeRepository } from "@/data/recipe-repository";
+import { recipeRepository } from "@/data/recipe-repository";
 import type { Category } from "@/data/types";
 import { colors, radius, spacing } from "@/theme/app-theme";
 import { useAuth } from "@/contexts/auth-context";
 
 export default function HomeScreen() {
-  const { role } = useAuth();
+  const { role, user } = useAuth();
   const [items, setItems] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -29,7 +29,7 @@ export default function HomeScreen() {
   const load = async () => {
     setError("");
     try {
-      setItems(await mockRecipeRepository.getCategories());
+      setItems(await recipeRepository.getCategories());
     } catch {
       setError("Kategorije trenutno nije moguće učitati.");
     } finally {
@@ -38,7 +38,7 @@ export default function HomeScreen() {
     }
   };
   useEffect(() => {
-    void mockRecipeRepository
+    void recipeRepository
       .getCategories()
       .then(setItems)
       .catch(() => setError("Kategorije trenutno nije moguće učitati."))
@@ -121,12 +121,11 @@ export default function HomeScreen() {
           <View style={styles.footer}>
             <Text style={styles.footerTitle}>Imaš recept za podijeliti?</Text>
             <Text style={styles.subtitle}>
-              Obrazac možeš pregledati već sada. Spremanje će se povezati u 3.
-              fazi.
+              {user ? "Dodaj svoj recept u zajedničku zbirku." : "Prijavi se kako bi mogao dodati recept."}
             </Text>
             <PrimaryButton
-              title="Otvori obrazac"
-              onPress={() => router.push("/recipe/new")}
+              title={user ? "Dodaj recept" : "Prijavi se"}
+              onPress={() => router.push(user ? "/recipe/new" : "/auth/login")}
             />
           </View>
         }
