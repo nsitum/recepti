@@ -19,7 +19,7 @@ export function AuthLinks() {
 }
 export function LoadingState() { return <View style={styles.center}><ActivityIndicator size="large" color={colors.accent} /><Text style={styles.muted}>Učitavanje…</Text></View>; }
 export function EmptyState({ title, message }: { title: string; message: string }) { return <View style={styles.center}><Text style={styles.emptyTitle}>{title}</Text><Text style={styles.muted}>{message}</Text></View>; }
-export function InfoBanner({ children }: { children: string }) { return <View style={styles.info}><Text style={styles.infoTitle}>Faza 1 · demonstracijsko sučelje</Text><Text style={styles.muted}>{children}</Text></View>; }
+export function InfoBanner({ children, title = 'Važna napomena' }: { children: string; title?: string }) { return <View style={styles.info}><Text style={styles.infoTitle}>{title}</Text><Text style={styles.muted}>{children}</Text></View>; }
 export function FoodImage({ uri, style }: { uri: string; style?: object }) {
   const [failed, setFailed] = useState(false);
   if (failed) return <View style={[styles.imageFallback, style]}><Text style={styles.fallbackEmoji}>🍽️</Text><Text style={styles.muted}>Slika nije dostupna</Text></View>;

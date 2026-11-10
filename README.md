@@ -26,9 +26,13 @@ Expo u mobilni bundle ugrađuje `EXPO_PUBLIC_` vrijednosti. To nisu administrato
 - `ratings/{recipeId}_{uid}`: `recipeId`, `userId`, `value`, `updatedAt`
 - `users/{uid}`: `email`, `role`, `createdAt`
 
-Dokument ocjene ima deterministički ID pa korisnik može imati najviše jednu ocjenu po receptu. Recept namjerno nema polja prosjeka, zbroja ni broja ocjena. U fazi ocjenjivanja ta će se statistika čitati Firestore agregacijskim upitom iz izvornih ocjena, čime nema klijentskog prepisivanja agregata ni nedosljednosti pri istodobnim promjenama.
+Dokument ocjene ima deterministički ID pa korisnik može imati najviše jednu ocjenu po receptu. Recept namjerno nema polja prosjeka, zbroja ni broja ocjena. Statistika se čita Firestore agregacijskim upitom iz izvornih ocjena, čime nema klijentskog prepisivanja agregata ni nedosljednosti pri istodobnim promjenama.
 
-Brisanje recepta ili kategorije ne briše povezane Firestore dokumente automatski. Administratorski tok u fazi 5 mora eksplicitno pronaći i obrisati ocjene, zatim recepte, pa kategoriju. Za vrlo velik produkcijski skup koristila bi se pozadinska Cloud Function; ona nije potrebna za ovu izvedbu.
+Brisanje recepta ili kategorije ne briše povezane Firestore dokumente automatski. Administratorski tok eksplicitno pronalazi ocjene i recepte te ih briše zajedno s roditeljskim dokumentom u jednom atomskom batchu. Mobilna aplikacija odbija kaskadno brisanje koje bi prešlo 500 operacija. Za veći produkcijski skup koristila bi se pozadinska Cloud Function ili drugi pouzdani poslužiteljski proces; on nije potreban za opseg ove izvedbe.
+
+## Administratorske funkcije
+
+Administrator može dodavati i brisati kategorije te uređivati i brisati sve recepte. Brisanje uvijek traži potvrdu i navodi da će ukloniti povezane recepte odnosno ocjene. Firestore pravila, a ne samo prikaz sučelja, ograničavaju te operacije na administratorsku ulogu.
 
 ## Početni podaci
 
