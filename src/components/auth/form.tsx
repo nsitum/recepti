@@ -3,7 +3,7 @@ import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
-import { Field, InfoBanner, PrimaryButton } from './app-ui';
+import { Field, InfoBanner, PrimaryButton } from '@/components/ui/app-ui';
 import { firebaseErrorMessage } from '@/lib/firebase-errors';
 import { isFirebaseConfigured, requireFirebase } from '@/lib/firebase';
 import { colors, spacing } from '@/theme/app-theme';

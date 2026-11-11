@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { FoodImage } from './app-ui';
+import { FoodImage } from '@/components/ui/app-ui';
 import { colors, radius, spacing } from '@/theme/app-theme';
 import type { Recipe } from '@/data/types';
 
