@@ -1,4 +1,4 @@
-import { Field, InfoBanner, PrimaryButton } from "@/components/ui/app-ui";
+import { Field, InfoBanner, PrimaryButton } from "@/components/ui";
 import { isFirebaseConfigured, requireFirebase } from "@/lib/firebase";
 import { firebaseErrorMessage } from "@/lib/firebase-errors";
 import { colors, spacing } from "@/theme/app-theme";

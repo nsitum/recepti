@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
 import { colors, radius, spacing } from "@/theme/app-theme";
-import { PrimaryButton } from "@/components/ui/app-ui";
+import { PrimaryButton } from "@/components/ui";
 
 type CategoriesFooterProps = {
   isAuthenticated: boolean;

@@ -1,7 +1,7 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { AuthLinks, EmptyState, FoodImage, LoadingState, PrimaryButton } from '@/components/ui/app-ui';
+import { AuthLinks, EmptyState, FoodImage, LoadingState, PrimaryButton } from '@/components/ui';
 import { useAuth } from '@/contexts/auth-context';
 import { ratingRepository } from '@/data/rating-repository';
 import { recipeRepository } from '@/data/recipe-repository';

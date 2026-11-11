@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, FlatList, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { EmptyState, Field, InfoBanner, LoadingState, PrimaryButton } from '@/components/ui/app-ui';
+import { EmptyState, Field, InfoBanner, LoadingState, PrimaryButton } from '@/components/ui';
 import { useAuth } from '@/contexts/auth-context';
 import { recipeRepository } from '@/data/recipe-repository';
 import type { Category } from '@/data/types';

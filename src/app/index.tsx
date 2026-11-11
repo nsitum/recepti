@@ -1,6 +1,6 @@
 import { CategoriesFooter } from "@/components/categories/footer";
 import { CategoriesHeader } from "@/components/categories/header";
-import { EmptyState, LoadingState } from "@/components/ui/app-ui";
+import { EmptyState, LoadingState } from "@/components/ui";
 import { CategoryCard } from "@/components/categories/card";
 import { useAuth } from "@/contexts/auth-context";
 import { recipeRepository } from "@/data/recipe-repository";

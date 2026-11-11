@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { EmptyState, Field, LoadingState, PrimaryButton } from '@/components/ui/app-ui';
+import { EmptyState, Field, LoadingState, PrimaryButton } from '@/components/ui';
 import { useAuth } from '@/contexts/auth-context';
 import { recipeRepository } from '@/data/recipe-repository';
 import type { Category, Recipe } from '@/data/types';

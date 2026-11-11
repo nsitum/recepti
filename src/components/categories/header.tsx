@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { colors, radius, spacing } from "@/theme/app-theme";
-import { AuthLinks } from "@/components/ui/app-ui";
+import { AuthLinks } from "@/components/ui";
 
 type CategoriesHeaderProps = {
   error: string;

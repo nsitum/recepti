@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RecipeCard } from '@/components/recipes/card';
-import { AuthLinks, EmptyState, LoadingState, PrimaryButton } from '@/components/ui/app-ui';
+import { AuthLinks, EmptyState, LoadingState, PrimaryButton } from '@/components/ui';
 import { useAuth } from '@/contexts/auth-context';
 import { recipeRepository } from '@/data/recipe-repository';
 import type { Category, Recipe } from '@/data/types';
