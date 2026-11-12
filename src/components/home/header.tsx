@@ -9,12 +9,7 @@ type HomeHeaderProps = {
   onOpenAdmin: () => void;
 };
 
-export function HomeHeader({
-  error,
-  isAdmin,
-  onRetry,
-  onOpenAdmin,
-}: HomeHeaderProps) {
+export function HomeHeader({ error, isAdmin, onRetry, onOpenAdmin }: HomeHeaderProps) {
   return (
     <View style={styles.header}>
       <View style={styles.top}>
@@ -30,9 +25,7 @@ export function HomeHeader({
       </Text>
       {error ? (
         <Pressable style={styles.error} onPress={onRetry}>
-          <Text style={styles.errorText}>
-            {error} Dodirni za ponovni pokušaj.
-          </Text>
+          <Text style={styles.errorText}>{error} Dodirni za ponovni pokušaj.</Text>
         </Pressable>
       ) : null}
       <View style={styles.sectionRow}>

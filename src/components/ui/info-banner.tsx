@@ -3,10 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 
 type InfoBannerProps = { children: string; title?: string };
 
-export function InfoBanner({
-  children,
-  title = "Važna napomena",
-}: InfoBannerProps) {
+export function InfoBanner({ children, title = "Važna napomena" }: InfoBannerProps) {
   return (
     <View style={styles.banner}>
       <Text style={styles.title}>{title}</Text>

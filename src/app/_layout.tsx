@@ -19,30 +19,15 @@ export default function RootLayout() {
       >
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="category/[id]" options={{ title: "Recepti" }} />
-        <Stack.Screen
-          name="recipe/[id]"
-          options={{ title: "Detalji recepta" }}
-        />
-        <Stack.Screen
-          name="recipe/new"
-          options={{ title: "Novi recept", presentation: "modal" }}
-        />
-        <Stack.Screen
-          name="recipe/edit/[id]"
-          options={{ title: "Uredi recept" }}
-        />
-        <Stack.Screen
-          name="auth/login"
-          options={{ title: "Prijava", presentation: "modal" }}
-        />
+        <Stack.Screen name="recipe/[id]" options={{ title: "Detalji recepta" }} />
+        <Stack.Screen name="recipe/new" options={{ title: "Novi recept", presentation: "modal" }} />
+        <Stack.Screen name="recipe/edit/[id]" options={{ title: "Uredi recept" }} />
+        <Stack.Screen name="auth/login" options={{ title: "Prijava", presentation: "modal" }} />
         <Stack.Screen
           name="auth/register"
           options={{ title: "Registracija", presentation: "modal" }}
         />
-        <Stack.Screen
-          name="admin/categories"
-          options={{ title: "Kategorije" }}
-        />
+        <Stack.Screen name="admin/categories" options={{ title: "Kategorije" }} />
       </Stack>
     </AuthProvider>
   );

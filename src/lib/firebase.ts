@@ -1,9 +1,9 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getApp, getApps, initializeApp } from 'firebase/app';
-import * as ReactNativeAuth from '@firebase/auth';
-import { getAuth, initializeAuth, type Auth } from 'firebase/auth';
-import { getFirestore, type Firestore } from 'firebase/firestore';
-import { Platform } from 'react-native';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getApp, getApps, initializeApp } from "firebase/app";
+import * as ReactNativeAuth from "@firebase/auth";
+import { getAuth, initializeAuth, type Auth } from "firebase/auth";
+import { getFirestore, type Firestore } from "firebase/firestore";
+import { Platform } from "react-native";
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -20,10 +20,14 @@ export let db: Firestore | null = null;
 
 if (isFirebaseConfigured) {
   const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-  if (Platform.OS === 'web') auth = getAuth(app);
+  if (Platform.OS === "web") auth = getAuth(app);
   else {
     try {
-      const persistence = (ReactNativeAuth as typeof ReactNativeAuth & { getReactNativePersistence(storage: typeof AsyncStorage): unknown }).getReactNativePersistence(AsyncStorage);
+      const persistence = (
+        ReactNativeAuth as typeof ReactNativeAuth & {
+          getReactNativePersistence(storage: typeof AsyncStorage): unknown;
+        }
+      ).getReactNativePersistence(AsyncStorage);
       auth = initializeAuth(app, { persistence: persistence as never });
     } catch {
       // Fast Refresh can attempt to initialize the same Auth instance twice.
@@ -34,6 +38,9 @@ if (isFirebaseConfigured) {
 }
 
 export function requireFirebase() {
-  if (!auth || !db) throw new Error('Firebase nije konfiguriran. Kopirajte .env.example u .env i unesite vrijednosti.');
+  if (!auth || !db)
+    throw new Error(
+      "Firebase nije konfiguriran. Kopirajte .env.example u .env i unesite vrijednosti.",
+    );
   return { auth, db };
 }

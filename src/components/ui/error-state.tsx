@@ -19,11 +19,7 @@ export function ErrorState({
   return (
     <View style={styles.container}>
       <EmptyState title={title} message={message} />
-      <PrimaryButton
-        title={retryTitle}
-        variant="outline"
-        onPress={onRetry}
-      />
+      <PrimaryButton title={retryTitle} variant="outline" onPress={onRetry} />
     </View>
   );
 }

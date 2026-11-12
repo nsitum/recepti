@@ -9,10 +9,7 @@ type CategoryCardProps = {
 
 export function CategoryCard({ category, onPress }: CategoryCardProps) {
   return (
-    <Pressable
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
-      onPress={onPress}
-    >
+    <Pressable style={({ pressed }) => [styles.card, pressed && styles.pressed]} onPress={onPress}>
       <Text style={styles.emoji}>{category.emoji}</Text>
       <Text style={styles.title}>{category.name}</Text>
       <Text numberOfLines={2} style={styles.description}>

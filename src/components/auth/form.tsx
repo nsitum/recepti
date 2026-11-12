@@ -10,14 +10,7 @@ import {
 } from "firebase/auth";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useState } from "react";
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-} from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from "react-native";
 
 type AuthFormProps = {
   mode: "login" | "register";
@@ -48,11 +41,7 @@ export function AuthForm({ mode }: AuthFormProps) {
     try {
       const { auth, db } = requireFirebase();
       if (register) {
-        const result = await createUserWithEmailAndPassword(
-          auth,
-          email.trim(),
-          password,
-        );
+        const result = await createUserWithEmailAndPassword(auth, email.trim(), password);
         try {
           await setDoc(doc(db, "users", result.user.uid), {
             email: result.user.email,
@@ -85,16 +74,9 @@ export function AuthForm({ mode }: AuthFormProps) {
       style={styles.flex}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Text style={styles.kicker}>
-          {register ? "NOVI RAČUN" : "DOBRO DOŠLI"}
-        </Text>
-        <Text style={styles.title}>
-          {register ? "Pridruži se kuhinji" : "Prijavi se"}
-        </Text>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <Text style={styles.kicker}>{register ? "NOVI RAČUN" : "DOBRO DOŠLI"}</Text>
+        <Text style={styles.title}>{register ? "Pridruži se kuhinji" : "Prijavi se"}</Text>
         <Text style={styles.subtitle}>
           {register
             ? "Registriraj se e-mail adresom i lozinkom."
@@ -102,8 +84,8 @@ export function AuthForm({ mode }: AuthFormProps) {
         </Text>
         {!isFirebaseConfigured ? (
           <InfoBanner>
-            Firebase još nije konfiguriran. Kopiraj .env.example u .env i
-            ponovno pokreni Expo server.
+            Firebase još nije konfiguriran. Kopiraj .env.example u .env i ponovno pokreni Expo
+            server.
           </InfoBanner>
         ) : null}
         <Field
@@ -113,11 +95,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           keyboardType="email-address"
           autoCapitalize="none"
           autoComplete="email"
-          error={
-            submitted && !emailOk
-              ? "Unesite ispravnu e-mail adresu."
-              : undefined
-          }
+          error={submitted && !emailOk ? "Unesite ispravnu e-mail adresu." : undefined}
         />
         <Field
           label="Lozinka"
@@ -125,11 +103,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           onChangeText={setPassword}
           secureTextEntry
           autoComplete={register ? "new-password" : "current-password"}
-          error={
-            submitted && !passwordOk
-              ? "Lozinka mora imati najmanje 6 znakova."
-              : undefined
-          }
+          error={submitted && !passwordOk ? "Lozinka mora imati najmanje 6 znakova." : undefined}
         />
         {register ? (
           <Field
@@ -137,11 +111,7 @@ export function AuthForm({ mode }: AuthFormProps) {
             value={confirm}
             onChangeText={setConfirm}
             secureTextEntry
-            error={
-              submitted && confirm !== password
-                ? "Lozinke se ne podudaraju."
-                : undefined
-            }
+            error={submitted && confirm !== password ? "Lozinke se ne podudaraju." : undefined}
           />
         ) : null}
         <PrimaryButton
@@ -152,10 +122,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         />
         <Text style={styles.switch}>
           {register ? "Već imaš račun? " : "Nemaš račun? "}
-          <Link
-            href={register ? "/auth/login" : "/auth/register"}
-            style={styles.link}
-          >
+          <Link href={register ? "/auth/login" : "/auth/register"} style={styles.link}>
             {register ? "Prijava" : "Registracija"}
           </Link>
         </Text>

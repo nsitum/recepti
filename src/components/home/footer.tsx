@@ -7,10 +7,7 @@ type HomeFooterProps = {
   onPress: () => void;
 };
 
-export function HomeFooter({
-  isAuthenticated,
-  onPress,
-}: HomeFooterProps) {
+export function HomeFooter({ isAuthenticated, onPress }: HomeFooterProps) {
   return (
     <View style={styles.footer}>
       <Text style={styles.title}>Imaš recept za podijeliti?</Text>
@@ -19,10 +16,7 @@ export function HomeFooter({
           ? "Dodaj svoj recept u zajedničku zbirku."
           : "Prijavi se kako bi mogao dodati recept."}
       </Text>
-      <PrimaryButton
-        title={isAuthenticated ? "Dodaj recept" : "Prijavi se"}
-        onPress={onPress}
-      />
+      <PrimaryButton title={isAuthenticated ? "Dodaj recept" : "Prijavi se"} onPress={onPress} />
     </View>
   );
 }

@@ -83,11 +83,7 @@ export default function CategoryScreen() {
   if (error) {
     return (
       <SafeAreaView style={styles.safe} edges={["left", "right", "bottom"]}>
-        <ErrorState
-          title="Recepti nisu učitani"
-          message={error}
-          onRetry={handleRetryPress}
-        />
+        <ErrorState title="Recepti nisu učitani" message={error} onRetry={handleRetryPress} />
       </SafeAreaView>
     );
   }
@@ -113,16 +109,10 @@ export default function CategoryScreen() {
           />
         }
         ListEmptyComponent={
-          <EmptyState
-            title="Još nema recepata"
-            message="U ovoj kategoriji još nema recepata."
-          />
+          <EmptyState title="Još nema recepata" message="U ovoj kategoriji još nema recepata." />
         }
         renderItem={({ item }) => (
-          <RecipeCard
-            recipe={item}
-            onPress={() => handleRecipePress(item.id)}
-          />
+          <RecipeCard recipe={item} onPress={() => handleRecipePress(item.id)} />
         )}
       />
     </SafeAreaView>

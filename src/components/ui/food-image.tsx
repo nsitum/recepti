@@ -1,13 +1,7 @@
 import { colors, spacing } from "@/theme/app-theme";
 import { Image } from "expo-image";
 import { useState } from "react";
-import {
-  StyleSheet,
-  Text,
-  View,
-  type ImageStyle,
-  type StyleProp,
-} from "react-native";
+import { StyleSheet, Text, View, type ImageStyle, type StyleProp } from "react-native";
 
 type FoodImageProps = { uri: string; style?: StyleProp<ImageStyle> };
 

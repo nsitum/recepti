@@ -23,12 +23,7 @@ export default function EditRecipeScreen() {
   }
 
   if (!recipe) {
-    return (
-      <EmptyState
-        title="Recept nije pronađen"
-        message="Uređivanje nije dostupno."
-      />
-    );
+    return <EmptyState title="Recept nije pronađen" message="Uređivanje nije dostupno." />;
   }
 
   return <RecipeForm recipe={recipe} />;

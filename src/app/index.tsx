@@ -72,10 +72,7 @@ export default function HomeScreen() {
           />
         }
         ListEmptyComponent={
-          <EmptyState
-            title="Nema kategorija"
-            message="Trenutačno nema dostupnih kategorija."
-          />
+          <EmptyState title="Nema kategorija" message="Trenutačno nema dostupnih kategorija." />
         }
         renderItem={({ item }) => (
           <CategoryCard

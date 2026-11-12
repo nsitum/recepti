@@ -20,15 +20,11 @@ export function CategoryHeader({
         <AuthLinks />
       </View>
       <Text style={styles.kicker}>KATEGORIJA</Text>
-      <Text style={styles.title}>
-        {category?.name ?? "Nepoznata kategorija"}
-      </Text>
+      <Text style={styles.title}>{category?.name ?? "Nepoznata kategorija"}</Text>
       <Text style={styles.subtitle}>{category?.description}</Text>
       <PrimaryButton
         title={
-          isAuthenticated
-            ? "Dodaj recept u ovu kategoriju"
-            : "Prijavi se za dodavanje recepta"
+          isAuthenticated ? "Dodaj recept u ovu kategoriju" : "Prijavi se za dodavanje recepta"
         }
         onPress={onAddRecipePress}
       />

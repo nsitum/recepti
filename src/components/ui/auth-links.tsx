@@ -1,13 +1,7 @@
 import { useAuth } from "@/contexts/auth-context";
 import { colors, radius, spacing } from "@/theme/app-theme";
 import { router } from "expo-router";
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 
 export function AuthLinks() {
   const { user, role, loading, logout } = useAuth();

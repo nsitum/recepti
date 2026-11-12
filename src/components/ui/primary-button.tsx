@@ -1,11 +1,5 @@
 import { colors, radius, spacing } from "@/theme/app-theme";
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  type PressableProps,
-} from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, type PressableProps } from "react-native";
 
 type PrimaryButtonProps = PressableProps & {
   title: string;
@@ -35,11 +29,7 @@ export function PrimaryButton({
       {busy ? (
         <ActivityIndicator color="#fff" />
       ) : (
-        <Text
-          style={[styles.text, variant === "outline" && styles.outlineText]}
-        >
-          {title}
-        </Text>
+        <Text style={[styles.text, variant === "outline" && styles.outlineText]}>{title}</Text>
       )}
     </Pressable>
   );
