@@ -16,14 +16,14 @@ export default function CategoryScreen() {
   const { user } = useAuth();
 
   const [category, setCategory] = useState<Category>();
-  const [items, setItems] = useState<Recipe[]>([]);
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
 
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState("");
 
-  const load = useCallback(async () => {
-    setError("");
+  const loadCategory = useCallback(async () => {
+    setLoadError("");
     const [categoryResult, recipesResult] = await Promise.allSettled([
       recipeRepository.getCategory(id),
       recipeRepository.getRecipes(id),
@@ -34,21 +34,21 @@ export default function CategoryScreen() {
     }
 
     if (recipesResult.status === "fulfilled") {
-      setItems(recipesResult.value);
+      setRecipes(recipesResult.value);
     }
 
     if (recipesResult.status === "rejected") {
-      setError(firebaseErrorMessage(recipesResult.reason));
+      setLoadError(firebaseErrorMessage(recipesResult.reason));
     }
 
-    setLoading(false);
-    setRefreshing(false);
+    setIsLoading(false);
+    setIsRefreshing(false);
   }, [id]);
 
   useFocusEffect(
     useCallback(() => {
-      void load();
-    }, [load]),
+      void loadCategory();
+    }, [loadCategory]),
   );
 
   const handleAddRecipePress = () => {
@@ -64,26 +64,26 @@ export default function CategoryScreen() {
   };
 
   const handleRetryPress = () => {
-    void load();
+    void loadCategory();
   };
 
   const handleRefresh = () => {
-    setRefreshing(true);
-    void load();
+    setIsRefreshing(true);
+    void loadCategory();
   };
 
   const handleRecipePress = (recipeId: string) => {
     router.push({ pathname: "/recipe/[id]", params: { id: recipeId } });
   };
 
-  if (loading) {
+  if (isLoading) {
     return <LoadingState />;
   }
 
-  if (error) {
+  if (loadError) {
     return (
       <SafeAreaView style={styles.safe} edges={["left", "right", "bottom"]}>
-        <ErrorState title="Recepti nisu učitani" message={error} onRetry={handleRetryPress} />
+        <ErrorState title="Recepti nisu učitani" message={loadError} onRetry={handleRetryPress} />
       </SafeAreaView>
     );
   }
@@ -91,12 +91,12 @@ export default function CategoryScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={["left", "right", "bottom"]}>
       <FlatList
-        data={items}
+        data={recipes}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.content}
         refreshControl={
           <RefreshControl
-            refreshing={refreshing}
+            refreshing={isRefreshing}
             tintColor={colors.accent}
             onRefresh={handleRefresh}
           />
@@ -111,9 +111,7 @@ export default function CategoryScreen() {
         ListEmptyComponent={
           <EmptyState title="Još nema recepata" message="U ovoj kategoriji još nema recepata." />
         }
-        renderItem={({ item }) => (
-          <RecipeCard recipe={item} onPress={() => handleRecipePress(item.id)} />
-        )}
+        renderItem={({ item }) => <RecipeCard recipe={item} onPress={handleRecipePress} />}
       />
     </SafeAreaView>
   );

@@ -12,11 +12,11 @@ import {
   type DocumentData,
 } from "firebase/firestore";
 import { requireFirebase } from "@/lib/firebase";
+import { DEFAULT_CATEGORY_EMOJI, MAX_BATCH_WRITES } from "@/constants";
 import type { Category, Recipe } from "./types";
 
 export type NewRecipe = Pick<Recipe, "categoryId" | "title" | "description" | "imageUrl">;
 export type NewCategory = Pick<Category, "name" | "emoji" | "description">;
-const MAX_BATCH_WRITES = 500;
 export interface RecipeRepository {
   getCategories(): Promise<Category[]>;
   getCategory(id: string): Promise<Category | undefined>;
@@ -32,7 +32,7 @@ export interface RecipeRepository {
 const categoryFromDoc = (id: string, data: DocumentData): Category => ({
   id,
   name: String(data.name ?? ""),
-  emoji: String(data.emoji ?? "🍽️"),
+  emoji: String(data.emoji ?? DEFAULT_CATEGORY_EMOJI),
   description: String(data.description ?? ""),
 });
 const recipeFromDoc = (id: string, data: DocumentData): Recipe => ({
@@ -94,8 +94,10 @@ export const recipeRepository: RecipeRepository = {
   async deleteRecipe(id) {
     const { db } = requireFirebase();
     const ratings = await getDocs(query(collection(db, "ratings"), where("recipeId", "==", id)));
-    if (ratings.size + 1 > MAX_BATCH_WRITES)
+    if (ratings.size + 1 > MAX_BATCH_WRITES) {
       throw new Error("Recept ima previše ocjena za sigurno brisanje u mobilnoj aplikaciji.");
+    }
+
     const batch = writeBatch(db);
     ratings.docs.forEach((rating) => batch.delete(rating.ref));
     batch.delete(doc(db, "recipes", id));
@@ -119,10 +121,12 @@ export const recipeRepository: RecipeRepository = {
     );
     const writeCount =
       1 + recipes.size + ratingSnapshots.reduce((sum, ratings) => sum + ratings.size, 0);
-    if (writeCount > MAX_BATCH_WRITES)
+    if (writeCount > MAX_BATCH_WRITES) {
       throw new Error(
         "Kategorija sadrži previše podataka za sigurno brisanje u mobilnoj aplikaciji.",
       );
+    }
+
     const batch = writeBatch(db);
     ratingSnapshots.forEach((ratings) =>
       ratings.docs.forEach((rating) => batch.delete(rating.ref)),

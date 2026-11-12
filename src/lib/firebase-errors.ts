@@ -11,7 +11,13 @@ const messages: Record<string, string> = {
     "Firestore indeks još nije spreman. Pričekajte da u Firebase Consoleu dobije status Enabled pa pokušajte ponovno.",
 };
 export function firebaseErrorMessage(error: unknown) {
-  if (error instanceof FirebaseError)
+  if (error instanceof FirebaseError) {
     return messages[error.code] ?? "Firebase radnja nije uspjela.";
-  return error instanceof Error ? error.message : "Dogodila se neočekivana pogreška.";
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "Dogodila se neočekivana pogreška.";
 }

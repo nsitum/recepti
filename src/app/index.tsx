@@ -1,7 +1,7 @@
 import { CategoryCard } from "@/components/categories/card";
 import { HomeFooter } from "@/components/home/footer";
 import { HomeHeader } from "@/components/home/header";
-import { EmptyState, LoadingState } from "@/components/ui";
+import { EmptyState, ErrorState, LoadingState } from "@/components/ui";
 import { useAuth } from "@/contexts/auth-context";
 import { recipeRepository } from "@/data/recipe-repository";
 import type { Category } from "@/data/types";
@@ -13,83 +13,101 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
   const { role, user } = useAuth();
-  const [items, setItems] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
 
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const [error, setError] = useState("");
+  const [loadError, setLoadError] = useState("");
 
-  const load = async () => {
-    setError("");
+  const loadCategories = async () => {
+    setLoadError("");
+
     try {
-      const categories = await recipeRepository.getCategories();
-      setItems(categories);
+      const loadedCategories = await recipeRepository.getCategories();
+      setCategories(loadedCategories);
     } catch {
-      setError("Kategorije trenutno nije moguće učitati.");
+      setLoadError("Kategorije trenutno nije moguće učitati.");
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      setIsLoading(false);
+      setIsRefreshing(false);
     }
   };
 
   useEffect(() => {
     void recipeRepository
       .getCategories()
-      .then(setItems)
-      .catch(() => setError("Kategorije trenutno nije moguće učitati."))
-      .finally(() => setLoading(false));
+      .then(setCategories)
+      .catch(() => setLoadError("Kategorije trenutno nije moguće učitati."))
+      .finally(() => setIsLoading(false));
   }, []);
 
-  if (loading) {
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    void loadCategories();
+  };
+
+  const handleRetryPress = () => {
+    void loadCategories();
+  };
+
+  const handleOpenAdminPress = () => {
+    router.push("/admin/categories");
+  };
+
+  const handleCategoryPress = (categoryId: string) => {
+    router.push({ pathname: "/category/[id]", params: { id: categoryId } });
+  };
+
+  const handleFooterPress = () => {
+    if (user) {
+      router.push("/recipe/new");
+      return;
+    }
+
+    router.push("/auth/login");
+  };
+
+  if (isLoading) {
     return <LoadingState />;
+  }
+
+  if (loadError) {
+    return (
+      <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+        <ErrorState
+          title="Kategorije nisu učitane"
+          message={loadError}
+          onRetry={handleRetryPress}
+        />
+      </SafeAreaView>
+    );
   }
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <FlatList
-        data={items}
+        data={categories}
         keyExtractor={(item) => item.id}
         numColumns={2}
         columnWrapperStyle={styles.columns}
         contentContainerStyle={styles.content}
         refreshControl={
           <RefreshControl
-            refreshing={refreshing}
+            refreshing={isRefreshing}
             tintColor={colors.accent}
-            onRefresh={() => {
-              setRefreshing(true);
-              load();
-            }}
+            onRefresh={handleRefresh}
           />
         }
         ListHeaderComponent={
-          <HomeHeader
-            error={error}
-            isAdmin={role === "admin"}
-            onRetry={() => void load()}
-            onOpenAdmin={() => router.push("/admin/categories")}
-          />
+          <HomeHeader isAdmin={role === "admin"} onOpenAdmin={handleOpenAdminPress} />
         }
         ListEmptyComponent={
           <EmptyState title="Nema kategorija" message="Trenutačno nema dostupnih kategorija." />
         }
-        renderItem={({ item }) => (
-          <CategoryCard
-            category={item}
-            onPress={() =>
-              router.push({
-                pathname: "/category/[id]",
-                params: { id: item.id },
-              })
-            }
-          />
-        )}
+        renderItem={({ item }) => <CategoryCard category={item} onPress={handleCategoryPress} />}
         ListFooterComponent={
-          <HomeFooter
-            isAuthenticated={Boolean(user)}
-            onPress={() => router.push(user ? "/recipe/new" : "/auth/login")}
-          />
+          <HomeFooter isAuthenticated={Boolean(user)} onPress={handleFooterPress} />
         }
       />
     </SafeAreaView>

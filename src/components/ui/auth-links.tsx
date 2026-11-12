@@ -4,9 +4,21 @@ import { router } from "expo-router";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 
 export function AuthLinks() {
-  const { user, role, loading, logout } = useAuth();
-  if (loading) return <ActivityIndicator size="small" color={colors.accent} />;
-  if (user)
+  const { user, role, isLoading, logout } = useAuth();
+
+  const handleLoginPress = () => {
+    router.push("/auth/login");
+  };
+
+  const handleRegisterPress = () => {
+    router.push("/auth/register");
+  };
+
+  if (isLoading) {
+    return <ActivityIndicator size="small" color={colors.accent} />;
+  }
+
+  if (user) {
     return (
       <View style={styles.links}>
         <Text numberOfLines={1} style={styles.muted}>
@@ -17,12 +29,14 @@ export function AuthLinks() {
         </Pressable>
       </View>
     );
+  }
+
   return (
     <View style={styles.links}>
-      <Pressable onPress={() => router.push("/auth/login")}>
+      <Pressable onPress={handleLoginPress}>
         <Text style={styles.link}>Prijava</Text>
       </Pressable>
-      <Pressable onPress={() => router.push("/auth/register")}>
+      <Pressable onPress={handleRegisterPress}>
         <Text style={styles.register}>Registracija</Text>
       </Pressable>
     </View>

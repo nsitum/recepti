@@ -29,13 +29,18 @@ export const ratingRepository = {
   async getUserRating(recipeId: string, userId: string): Promise<RatingValue | null> {
     const { db } = requireFirebase();
     const snapshot = await getDoc(doc(db, "ratings", ratingId(recipeId, userId)));
-    if (!snapshot.exists()) return null;
+    if (!snapshot.exists()) {
+      return null;
+    }
+
     const value = snapshot.data().value;
     return Number.isInteger(value) && value >= 1 && value <= 5 ? (value as RatingValue) : null;
   },
   async save(recipeId: string, userId: string, value: RatingValue): Promise<void> {
-    if (!Number.isInteger(value) || value < 1 || value > 5)
+    if (!Number.isInteger(value) || value < 1 || value > 5) {
       throw new Error("Ocjena mora biti cijeli broj od 1 do 5.");
+    }
+
     const { db } = requireFirebase();
     await setDoc(doc(db, "ratings", ratingId(recipeId, userId)), {
       recipeId,

@@ -1,15 +1,13 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { colors, radius, spacing } from "@/theme/app-theme";
+import { colors, spacing } from "@/theme/app-theme";
 import { AuthLinks } from "@/components/ui";
 
 type HomeHeaderProps = {
-  error: string;
   isAdmin: boolean;
-  onRetry: () => void;
   onOpenAdmin: () => void;
 };
 
-export function HomeHeader({ error, isAdmin, onRetry, onOpenAdmin }: HomeHeaderProps) {
+export function HomeHeader({ isAdmin, onOpenAdmin }: HomeHeaderProps) {
   return (
     <View style={styles.header}>
       <View style={styles.top}>
@@ -23,11 +21,6 @@ export function HomeHeader({ error, isAdmin, onRetry, onOpenAdmin }: HomeHeaderP
       <Text style={styles.subtitle}>
         Odaberi kategoriju i pronađi ideju za svoj sljedeći obrok.
       </Text>
-      {error ? (
-        <Pressable style={styles.error} onPress={onRetry}>
-          <Text style={styles.errorText}>{error} Dodirni za ponovni pokušaj.</Text>
-        </Pressable>
-      ) : null}
       <View style={styles.sectionRow}>
         <Text style={styles.sectionTitle}>Kategorije</Text>
         {isAdmin ? (
@@ -70,10 +63,4 @@ const styles = StyleSheet.create({
   },
   sectionTitle: { color: colors.text, fontSize: 21, fontWeight: "900" },
   admin: { color: colors.accent, fontWeight: "800" },
-  error: {
-    padding: spacing.md,
-    borderRadius: radius.md,
-    backgroundColor: "#FDE7E5",
-  },
-  errorText: { color: colors.danger, fontWeight: "700" },
 });

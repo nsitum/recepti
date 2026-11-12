@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -11,7 +10,8 @@ import {
   Text,
   View,
 } from "react-native";
-import { EmptyState, Field, LoadingState, PrimaryButton } from "@/components/ui";
+import { CategoryPicker } from "@/components/categories/picker";
+import { EmptyState, ErrorState, Field, LoadingState, PrimaryButton } from "@/components/ui";
 import { HTTPS_URL_REGEX } from "@/constants";
 import { useAuth } from "@/contexts/auth-context";
 import { recipeRepository } from "@/data/recipe-repository";
@@ -25,7 +25,7 @@ type RecipeFormProps = {
 };
 
 export function RecipeForm({ recipe, initialCategoryId }: RecipeFormProps) {
-  const { user, role, loading: authLoading } = useAuth();
+  const { user, role, isLoading: isAuthLoading } = useAuth();
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryId, setCategoryId] = useState(recipe?.categoryId ?? initialCategoryId ?? "");
@@ -33,21 +33,21 @@ export function RecipeForm({ recipe, initialCategoryId }: RecipeFormProps) {
   const [title, setTitle] = useState(recipe?.title ?? "");
   const [description, setDescription] = useState(recipe?.description ?? "");
   const [imageUrl, setImageUrl] = useState(recipe?.imageUrl ?? "");
-  const [picker, setPicker] = useState(false);
+  const [isCategoryPickerVisible, setIsCategoryPickerVisible] = useState(false);
 
-  const [submitted, setSubmitted] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [loadError, setLoadError] = useState("");
 
   const loadCategories = () => {
     setLoadError("");
-    setLoading(true);
+    setIsLoading(true);
     recipeRepository
       .getCategories()
       .then(setCategories)
       .catch((error) => setLoadError(firebaseErrorMessage(error)))
-      .finally(() => setLoading(false));
+      .finally(() => setIsLoading(false));
   };
 
   useEffect(() => {
@@ -55,10 +55,10 @@ export function RecipeForm({ recipe, initialCategoryId }: RecipeFormProps) {
       .getCategories()
       .then(setCategories)
       .catch((error) => setLoadError(firebaseErrorMessage(error)))
-      .finally(() => setLoading(false));
+      .finally(() => setIsLoading(false));
   }, []);
 
-  if (loading || authLoading) {
+  if (isLoading || isAuthLoading) {
     return <LoadingState />;
   }
 
@@ -77,9 +77,24 @@ export function RecipeForm({ recipe, initialCategoryId }: RecipeFormProps) {
     );
   }
 
-  const selected = categories.find((item) => item.id === categoryId);
+  const selectedCategory = categories.find((category) => category.id === categoryId);
   const isHttpsUrlValid = HTTPS_URL_REGEX.test(imageUrl.trim());
-  const isValid = Boolean(selected && title.trim() && description.trim() && isHttpsUrlValid);
+  const isValid = Boolean(
+    selectedCategory && title.trim() && description.trim() && isHttpsUrlValid,
+  );
+
+  const handleOpenCategoryPicker = () => {
+    setIsCategoryPickerVisible(true);
+  };
+
+  const handleCloseCategoryPicker = () => {
+    setIsCategoryPickerVisible(false);
+  };
+
+  const handleCategorySelect = (selectedCategoryId: string) => {
+    setCategoryId(selectedCategoryId);
+    setIsCategoryPickerVisible(false);
+  };
 
   const handleUpdateSuccessPress = () => {
     if (!recipe) {
@@ -93,14 +108,14 @@ export function RecipeForm({ recipe, initialCategoryId }: RecipeFormProps) {
     router.replace({ pathname: "/category/[id]", params: { id: categoryId } });
   };
 
-  const submit = async () => {
-    setSubmitted(true);
+  const handleSubmit = async () => {
+    setIsSubmitted(true);
 
-    if (!isValid || !selected || busy) {
+    if (!isValid || !selectedCategory || isSaving) {
       return;
     }
 
-    setBusy(true);
+    setIsSaving(true);
 
     try {
       const input = {
@@ -122,25 +137,26 @@ export function RecipeForm({ recipe, initialCategoryId }: RecipeFormProps) {
       }
 
       await recipeRepository.createRecipe(input, user.uid, user.email ?? "Nepoznati korisnik");
-      Alert.alert("Recept je objavljen", `Recept je dodan u kategoriju „${selected.name}”.`, [
-        {
-          text: "U redu",
-          onPress: handleCreateSuccessPress,
-        },
-      ]);
+      Alert.alert(
+        "Recept je objavljen",
+        `Recept je dodan u kategoriju „${selectedCategory.name}”.`,
+        [
+          {
+            text: "U redu",
+            onPress: handleCreateSuccessPress,
+          },
+        ],
+      );
     } catch (error) {
       Alert.alert("Spremanje nije uspjelo", firebaseErrorMessage(error));
     } finally {
-      setBusy(false);
+      setIsSaving(false);
     }
   };
 
   if (loadError) {
     return (
-      <View style={styles.center}>
-        <EmptyState title="Kategorije nisu učitane" message={loadError} />
-        <PrimaryButton title="Pokušaj ponovno" onPress={loadCategories} />
-      </View>
+      <ErrorState title="Kategorije nisu učitane" message={loadError} onRetry={loadCategories} />
     );
   }
 
@@ -160,15 +176,15 @@ export function RecipeForm({ recipe, initialCategoryId }: RecipeFormProps) {
         <View style={styles.field}>
           <Text style={styles.label}>Kategorija</Text>
           <Pressable
-            style={[styles.select, submitted && !categoryId && styles.invalid]}
-            onPress={() => setPicker(true)}
+            style={[styles.select, isSubmitted && !categoryId && styles.invalid]}
+            onPress={handleOpenCategoryPicker}
           >
-            <Text style={selected ? styles.selectText : styles.placeholder}>
-              {selected?.name ?? "Odaberi kategoriju"}
+            <Text style={selectedCategory ? styles.selectText : styles.placeholder}>
+              {selectedCategory?.name ?? "Odaberi kategoriju"}
             </Text>
             <Text>⌄</Text>
           </Pressable>
-          {submitted && !categoryId ? (
+          {isSubmitted && !categoryId ? (
             <Text style={styles.error}>Odaberite kategoriju.</Text>
           ) : null}
         </View>
@@ -177,7 +193,7 @@ export function RecipeForm({ recipe, initialCategoryId }: RecipeFormProps) {
           value={title}
           onChangeText={setTitle}
           placeholder="npr. Rižoto od kozica"
-          error={submitted && !title.trim() ? "Unesite naslov." : undefined}
+          error={isSubmitted && !title.trim() ? "Unesite naslov." : undefined}
         />
         <Field
           label="Opis pripreme"
@@ -185,7 +201,7 @@ export function RecipeForm({ recipe, initialCategoryId }: RecipeFormProps) {
           onChangeText={setDescription}
           multiline
           placeholder="Opišite postupak..."
-          error={submitted && !description.trim() ? "Unesite opis pripreme." : undefined}
+          error={isSubmitted && !description.trim() ? "Unesite opis pripreme." : undefined}
         />
         <Field
           label="HTTPS URL slike"
@@ -195,46 +211,27 @@ export function RecipeForm({ recipe, initialCategoryId }: RecipeFormProps) {
           autoCorrect={false}
           keyboardType="url"
           placeholder="https://..."
-          error={submitted && !isHttpsUrlValid ? "Unesite ispravan HTTPS URL." : undefined}
+          error={isSubmitted && !isHttpsUrlValid ? "Unesite ispravan HTTPS URL." : undefined}
         />
         <PrimaryButton
           title={recipe ? "Spremi promjene" : "Objavi recept"}
-          busy={busy}
-          onPress={submit}
+          busy={isSaving}
+          onPress={handleSubmit}
         />
       </ScrollView>
-      <Modal
-        visible={picker}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setPicker(false)}
-      >
-        <Pressable style={styles.overlay} onPress={() => setPicker(false)}>
-          <View style={styles.sheet}>
-            <Text style={styles.sheetTitle}>Odaberi kategoriju</Text>
-            {categories.map((item) => (
-              <Pressable
-                key={item.id}
-                style={styles.option}
-                onPress={() => {
-                  setCategoryId(item.id);
-                  setPicker(false);
-                }}
-              >
-                <Text style={styles.selectText}>{item.name}</Text>
-                {item.id === categoryId ? <Text style={styles.check}>✓</Text> : null}
-              </Pressable>
-            ))}
-          </View>
-        </Pressable>
-      </Modal>
+      <CategoryPicker
+        categories={categories}
+        selectedCategoryId={categoryId}
+        visible={isCategoryPickerVisible}
+        onClose={handleCloseCategoryPicker}
+        onSelect={handleCategorySelect}
+      />
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  center: { flex: 1, padding: spacing.lg, justifyContent: "center", gap: spacing.md },
   content: { padding: spacing.md, paddingBottom: 48, gap: spacing.md },
   kicker: { color: colors.accent, letterSpacing: 2, fontSize: 11, fontWeight: "900" },
   title: { color: colors.text, fontSize: 30, fontWeight: "900" },
@@ -256,22 +253,4 @@ const styles = StyleSheet.create({
   placeholder: { color: colors.textMuted, fontSize: 16 },
   invalid: { borderColor: colors.danger },
   error: { color: colors.danger, fontSize: 13 },
-  overlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "#0007" },
-  sheet: {
-    padding: spacing.lg,
-    paddingBottom: 40,
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
-    backgroundColor: colors.background,
-  },
-  sheetTitle: { color: colors.text, fontSize: 21, fontWeight: "900", marginBottom: spacing.md },
-  option: {
-    minHeight: 48,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  check: { color: colors.accent, fontSize: 20, fontWeight: "900" },
 });

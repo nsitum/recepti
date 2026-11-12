@@ -20,8 +20,12 @@ export let db: Firestore | null = null;
 
 if (isFirebaseConfigured) {
   const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-  if (Platform.OS === "web") auth = getAuth(app);
-  else {
+
+  if (Platform.OS === "web") {
+    auth = getAuth(app);
+  }
+
+  if (Platform.OS !== "web") {
     try {
       const persistence = (
         ReactNativeAuth as typeof ReactNativeAuth & {
@@ -38,9 +42,11 @@ if (isFirebaseConfigured) {
 }
 
 export function requireFirebase() {
-  if (!auth || !db)
+  if (!auth || !db) {
     throw new Error(
       "Firebase nije konfiguriran. Kopirajte .env.example u .env i unesite vrijednosti.",
     );
+  }
+
   return { auth, db };
 }

@@ -1,48 +1,49 @@
-import { AuthLinks, EmptyState, FoodImage, LoadingState, PrimaryButton } from "@/components/ui";
+import { useCallback, useState } from "react";
+import { Alert, StyleSheet, Text, View } from "react-native";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { AdminRecipeActions } from "@/components/admin/recipes/actions";
+import { RatingCard } from "@/components/ratings/card";
+import { RecipeDetails } from "@/components/recipes/details";
+import { EmptyState, ErrorState, LoadingState, PrimaryButton } from "@/components/ui";
 import { useAuth } from "@/contexts/auth-context";
 import { ratingRepository } from "@/data/rating-repository";
 import { recipeRepository } from "@/data/recipe-repository";
 import type { RatingStats, RatingValue, Recipe } from "@/data/types";
 import { firebaseErrorMessage } from "@/lib/firebase-errors";
 import { colors, radius, spacing } from "@/theme/app-theme";
-import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
-const EMPTY_STATS: RatingStats = { average: null, count: 0 };
+const EMPTY_RATING_STATS: RatingStats = { average: null, count: 0 };
 
 export default function RecipeScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-
   const { user, role } = useAuth();
 
   const [recipe, setRecipe] = useState<Recipe>();
   const [categoryName, setCategoryName] = useState("");
-  const [stats, setStats] = useState<RatingStats>(EMPTY_STATS);
-  const [myRating, setMyRating] = useState<RatingValue | null>(null);
+  const [ratingStats, setRatingStats] = useState<RatingStats>(EMPTY_RATING_STATS);
+  const [userRating, setUserRating] = useState<RatingValue | null>(null);
 
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [loadError, setLoadError] = useState("");
   const [ratingError, setRatingError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [ratingSuccessMessage, setRatingSuccessMessage] = useState("");
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError("");
+  const loadRecipe = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError("");
     setRatingError("");
 
     try {
-      const next = await recipeRepository.getRecipe(id);
-      setRecipe(next);
+      const loadedRecipe = await recipeRepository.getRecipe(id);
+      setRecipe(loadedRecipe);
 
-      if (!next) {
+      if (!loadedRecipe) {
         return;
       }
 
       const [categoryResult, statsResult, userRatingResult] = await Promise.allSettled([
-        recipeRepository.getCategory(next.categoryId),
+        recipeRepository.getCategory(loadedRecipe.categoryId),
         ratingRepository.getStats(id),
         user ? ratingRepository.getUserRating(id, user.uid) : Promise.resolve(null),
       ]);
@@ -52,7 +53,7 @@ export default function RecipeScreen() {
       }
 
       if (statsResult.status === "fulfilled") {
-        setStats(statsResult.value);
+        setRatingStats(statsResult.value);
       }
 
       if (statsResult.status === "rejected") {
@@ -60,73 +61,77 @@ export default function RecipeScreen() {
       }
 
       if (userRatingResult.status === "fulfilled") {
-        setMyRating(userRatingResult.value);
+        setUserRating(userRatingResult.value);
       }
 
       if (userRatingResult.status === "rejected") {
         setRatingError(firebaseErrorMessage(userRatingResult.reason));
       }
     } catch (reason) {
-      setError(firebaseErrorMessage(reason));
+      setLoadError(firebaseErrorMessage(reason));
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   }, [id, user]);
 
   useFocusEffect(
     useCallback(() => {
-      void load();
-    }, [load]),
+      void loadRecipe();
+    }, [loadRecipe]),
   );
 
-  const saveRating = async (value: RatingValue) => {
-    if (!user || !recipe || recipe.authorId === user.uid || saving) {
+  const handleRatingPress = async (rating: RatingValue) => {
+    if (!user || !recipe || recipe.authorId === user.uid || isSaving) {
       return;
     }
 
-    setSaving(true);
-    setSuccess("");
+    setIsSaving(true);
+    setRatingSuccessMessage("");
 
     try {
-      await ratingRepository.save(id, user.uid, value);
-      setMyRating(value);
-      setStats(await ratingRepository.getStats(id));
+      await ratingRepository.save(id, user.uid, rating);
+      const updatedRatingStats = await ratingRepository.getStats(id);
+
+      setUserRating(rating);
+      setRatingStats(updatedRatingStats);
       setRatingError("");
-      setSuccess("Ocjena je spremljena.");
+      setRatingSuccessMessage("Ocjena je spremljena.");
     } catch (reason) {
       Alert.alert("Ocjena nije spremljena", firebaseErrorMessage(reason));
     } finally {
-      setSaving(false);
+      setIsSaving(false);
     }
   };
 
-  const deleteRecipe = async () => {
-    if (!recipe || saving) {
+  const handleDeleteSuccessPress = () => {
+    if (!recipe) {
       return;
     }
 
-    setSaving(true);
+    router.replace({ pathname: "/category/[id]", params: { id: recipe.categoryId } });
+  };
+
+  const handleDeleteRecipe = async () => {
+    if (!recipe || isSaving) {
+      return;
+    }
+
+    setIsSaving(true);
 
     try {
       await recipeRepository.deleteRecipe(recipe.id);
       Alert.alert("Recept je obrisan", "Obrisane su i sve njegove ocjene.", [
-        {
-          text: "U redu",
-          onPress: () =>
-            router.replace({
-              pathname: "/category/[id]",
-              params: { id: recipe.categoryId },
-            }),
-        },
+        { text: "U redu", onPress: handleDeleteSuccessPress },
       ]);
     } catch (reason) {
       Alert.alert("Brisanje nije uspjelo", firebaseErrorMessage(reason));
-      setSaving(false);
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const confirmDelete = () => {
-    if (!recipe || saving) {
+  const handleDeleteRecipePress = () => {
+    if (!recipe || isSaving) {
       return;
     }
 
@@ -138,168 +143,76 @@ export default function RecipeScreen() {
         {
           text: "Obriši recept",
           style: "destructive",
-          onPress: () => void deleteRecipe(),
+          onPress: handleDeleteRecipe,
         },
       ],
     );
   };
 
-  if (loading) {
+  const handleRetryPress = () => {
+    void loadRecipe();
+  };
+
+  const handleLoginPress = () => {
+    router.push("/auth/login");
+  };
+
+  const handleEditRecipePress = () => {
+    router.push({ pathname: "/recipe/edit/[id]", params: { id } });
+  };
+
+  if (isLoading) {
     return <LoadingState />;
   }
 
-  if (error) {
-    return (
-      <View style={styles.center}>
-        <EmptyState title="Recept nije učitan" message={error} />
-        <PrimaryButton title="Pokušaj ponovno" onPress={() => void load()} />
-      </View>
-    );
+  if (loadError) {
+    return <ErrorState title="Recept nije učitan" message={loadError} onRetry={handleRetryPress} />;
   }
 
   if (!recipe) {
     return <EmptyState title="Recept nije pronađen" message="Recept je možda uklonjen." />;
   }
 
-  const ownRecipe = user?.uid === recipe.authorId;
-  const averageText =
-    stats.count && stats.average !== null ? `★ ${stats.average.toFixed(1)}` : "Nema ocjena";
+  const isOwnRecipe = user?.uid === recipe.authorId;
 
   return (
-    <ScrollView style={styles.safe} contentContainerStyle={styles.content}>
-      <FoodImage uri={recipe.imageUrl} style={styles.hero} />
-      <View style={styles.body}>
-        <View style={styles.auth}>
-          <AuthLinks />
+    <RecipeDetails
+      recipe={recipe}
+      categoryName={categoryName}
+      ratingStats={ratingStats}
+      ratingError={ratingError}
+    >
+      {user && !isOwnRecipe ? (
+        <RatingCard
+          currentRating={userRating}
+          isSaving={isSaving}
+          successMessage={ratingSuccessMessage}
+          onRatingPress={handleRatingPress}
+        />
+      ) : isOwnRecipe ? (
+        <View style={styles.notice}>
+          <Text style={styles.noticeText}>Vlastiti recept nije moguće ocijeniti.</Text>
         </View>
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>{categoryName}</Text>
-        </View>
-        <Text style={styles.title}>{recipe.title}</Text>
-        <View style={styles.rating}>
-          <Text style={[styles.score, stats.count > 0 && styles.scoreActive]}>{averageText}</Text>
-          <Text style={styles.count}>
-            {stats.count} {stats.count === 1 ? "korisnik" : "korisnika"}
-          </Text>
-        </View>
-        {ratingError ? <Text style={styles.error}>{ratingError}</Text> : null}
-        <Text style={styles.section}>Priprema</Text>
-        <Text style={styles.description}>{recipe.description}</Text>
-        <Text style={styles.author}>Autor: {recipe.authorEmail}</Text>
-        {user && !ownRecipe ? (
-          <View style={styles.ratingCard}>
-            <Text style={styles.section}>
-              {myRating ? `Tvoja ocjena: ${myRating}` : "Ocijeni recept"}
-            </Text>
-            <View style={styles.stars}>
-              {([1, 2, 3, 4, 5] as RatingValue[]).map((value) => (
-                <Pressable
-                  key={value}
-                  disabled={saving}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Ocjena ${value}`}
-                  onPress={() => void saveRating(value)}
-                >
-                  <Text style={[styles.star, value <= (myRating ?? 0) && styles.starActive]}>
-                    {"★"}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-            <Text style={styles.hint}>
-              {saving ? "Spremanje ocjene…" : "Ocjenu možeš promijeniti u bilo kojem trenutku."}
-            </Text>
-            {success ? <Text style={styles.success}>{success}</Text> : null}
-          </View>
-        ) : ownRecipe ? (
-          <View style={styles.notice}>
-            <Text style={styles.noticeText}>Vlastiti recept nije moguće ocijeniti.</Text>
-          </View>
-        ) : (
-          <PrimaryButton
-            title="Prijavi se za ocjenjivanje"
-            onPress={() => router.push("/auth/login")}
-          />
-        )}
-        {role === "admin" ? (
-          <View style={styles.admin}>
-            <Text style={styles.section}>Administratorske akcije</Text>
-            <PrimaryButton
-              title="Uredi recept"
-              variant="outline"
-              disabled={saving}
-              onPress={() => router.push({ pathname: "/recipe/edit/[id]", params: { id } })}
-            />
-            <PrimaryButton
-              title="Obriši recept"
-              variant="danger"
-              busy={saving}
-              onPress={confirmDelete}
-            />
-          </View>
-        ) : null}
-      </View>
-    </ScrollView>
+      ) : (
+        <PrimaryButton title="Prijavi se za ocjenjivanje" onPress={handleLoginPress} />
+      )}
+
+      {role === "admin" ? (
+        <AdminRecipeActions
+          isBusy={isSaving}
+          onEditPress={handleEditRecipePress}
+          onDeletePress={handleDeleteRecipePress}
+        />
+      ) : null}
+    </RecipeDetails>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
-  center: {
-    flex: 1,
-    padding: spacing.lg,
-    justifyContent: "center",
-    gap: spacing.md,
-  },
-  content: { paddingBottom: spacing.xl },
-  hero: { width: "100%", aspectRatio: 4 / 3 },
-  body: { padding: spacing.md, gap: spacing.md },
-  auth: { alignItems: "flex-end" },
-  badge: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: radius.pill,
-    backgroundColor: colors.surfaceMuted,
-  },
-  badgeText: { color: colors.accentDark, fontWeight: "800" },
-  title: {
-    color: colors.text,
-    fontSize: 32,
-    lineHeight: 38,
-    fontWeight: "900",
-  },
-  rating: { flexDirection: "row", alignItems: "baseline", gap: spacing.sm },
-  score: { color: colors.textMuted, fontSize: 18, fontWeight: "900" },
-  scoreActive: { color: colors.star },
-  count: { color: colors.textMuted },
-  error: { color: colors.danger, fontSize: 13 },
-  section: { color: colors.text, fontSize: 19, fontWeight: "900" },
-  description: { color: colors.text, fontSize: 16, lineHeight: 25 },
-  author: { color: colors.textMuted, fontSize: 13 },
-  ratingCard: {
-    padding: spacing.md,
-    borderRadius: radius.lg,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    gap: spacing.sm,
-  },
-  stars: { flexDirection: "row", justifyContent: "space-between" },
-  star: { color: colors.border, fontSize: 42 },
-  starActive: { color: colors.star },
-  hint: { color: colors.textMuted, fontSize: 12 },
-  success: { color: "#237A55", fontWeight: "800" },
   notice: {
     padding: spacing.md,
     borderRadius: radius.md,
     backgroundColor: colors.surfaceMuted,
   },
   noticeText: { color: colors.textMuted },
-  admin: {
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    gap: spacing.md,
-  },
 });

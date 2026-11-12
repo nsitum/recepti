@@ -4,12 +4,19 @@ import { colors, radius, spacing } from "@/theme/app-theme";
 
 type CategoryCardProps = {
   category: Category;
-  onPress: () => void;
+  onPress: (categoryId: string) => void;
 };
 
 export function CategoryCard({ category, onPress }: CategoryCardProps) {
+  const handlePress = () => {
+    onPress(category.id);
+  };
+
   return (
-    <Pressable style={({ pressed }) => [styles.card, pressed && styles.pressed]} onPress={onPress}>
+    <Pressable
+      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      onPress={handlePress}
+    >
       <Text style={styles.emoji}>{category.emoji}</Text>
       <Text style={styles.title}>{category.name}</Text>
       <Text numberOfLines={2} style={styles.description}>

@@ -1,15 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { Alert, FlatList, StyleSheet, Text, View } from "react-native";
+import { Alert, FlatList, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AdminCategoryItem } from "@/components/admin/categories/item";
-import {
-  EmptyState,
-  ErrorState,
-  Field,
-  InfoBanner,
-  LoadingState,
-  PrimaryButton,
-} from "@/components/ui";
+import { AdminCategoriesHeader } from "@/components/admin/categories/header";
+import { EmptyState, ErrorState, LoadingState } from "@/components/ui";
 import { DEFAULT_CATEGORY_EMOJI, MAX_CATEGORY_NAME_LENGTH } from "@/constants";
 import { useAuth } from "@/contexts/auth-context";
 import { recipeRepository } from "@/data/recipe-repository";
@@ -18,7 +12,7 @@ import { firebaseErrorMessage } from "@/lib/firebase-errors";
 import { colors, spacing } from "@/theme/app-theme";
 
 export default function CategoriesAdminScreen() {
-  const { role, loading: authLoading } = useAuth();
+  const { role, isLoading: isAuthLoading } = useAuth();
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryName, setCategoryName] = useState("");
@@ -59,7 +53,7 @@ export default function CategoriesAdminScreen() {
     void loadCategories();
   };
 
-  if (isLoading || authLoading) {
+  if (isLoading || isAuthLoading) {
     return <LoadingState />;
   }
 
@@ -143,6 +137,10 @@ export default function CategoriesAdminScreen() {
   };
 
   const handleDeleteCategoryPress = (category: Category) => {
+    const handleConfirmDeletePress = () => {
+      void handleDeleteCategory(category);
+    };
+
     Alert.alert(
       "Obrisati kategoriju?",
       `Trajno će se obrisati kategorija „${category.name}”, svi njezini recepti i sve njihove ocjene. Ovu radnju nije moguće poništiti.`,
@@ -151,11 +149,19 @@ export default function CategoriesAdminScreen() {
         {
           text: "Obriši sve",
           style: "destructive",
-          onPress: () => void handleDeleteCategory(category),
+          onPress: handleConfirmDeletePress,
         },
       ],
     );
   };
+
+  const categoryNameError =
+    isSubmitted && (!categoryName.trim() || categoryName.trim().length > MAX_CATEGORY_NAME_LENGTH)
+      ? `Unesite naziv do ${MAX_CATEGORY_NAME_LENGTH} znakova.`
+      : undefined;
+
+  const categoryEmojiError =
+    isSubmitted && !categoryEmoji.trim() ? "Unesite emoji ili simbol." : undefined;
 
   return (
     <SafeAreaView style={styles.safe} edges={["left", "right", "bottom"]}>
@@ -164,39 +170,18 @@ export default function CategoriesAdminScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.content}
         ListHeaderComponent={
-          <View style={styles.header}>
-            <Text style={styles.title}>Upravljanje kategorijama</Text>
-            <InfoBanner title="Pažljivo s brisanjem">
-              Brisanje kategorije trajno uklanja sve njezine recepte i njihove ocjene.
-            </InfoBanner>
-            <Field
-              label="Naziv nove kategorije"
-              value={categoryName}
-              onChangeText={setCategoryName}
-              placeholder="npr. Brza jela"
-              error={
-                isSubmitted &&
-                (!categoryName.trim() || categoryName.trim().length > MAX_CATEGORY_NAME_LENGTH)
-                  ? `Unesite naziv do ${MAX_CATEGORY_NAME_LENGTH} znakova.`
-                  : undefined
-              }
-            />
-            <Field
-              label="Emoji"
-              value={categoryEmoji}
-              onChangeText={setCategoryEmoji}
-              placeholder={DEFAULT_CATEGORY_EMOJI}
-              error={isSubmitted && !categoryEmoji.trim() ? "Unesite emoji ili simbol." : undefined}
-            />
-            <Field
-              label="Opis (neobavezno)"
-              value={categoryDescription}
-              onChangeText={setCategoryDescription}
-              placeholder="Kratak opis kategorije"
-            />
-            <PrimaryButton title="Dodaj kategoriju" busy={isSaving} onPress={handleAddCategory} />
-            <Text style={styles.section}>Postojeće kategorije</Text>
-          </View>
+          <AdminCategoriesHeader
+            categoryName={categoryName}
+            categoryEmoji={categoryEmoji}
+            categoryDescription={categoryDescription}
+            categoryNameError={categoryNameError}
+            categoryEmojiError={categoryEmojiError}
+            isSaving={isSaving}
+            onCategoryNameChange={setCategoryName}
+            onCategoryEmojiChange={setCategoryEmoji}
+            onCategoryDescriptionChange={setCategoryDescription}
+            onAddCategoryPress={handleAddCategory}
+          />
         }
         ListEmptyComponent={
           <EmptyState
@@ -219,7 +204,4 @@ export default function CategoriesAdminScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   content: { padding: spacing.md, paddingBottom: spacing.xl, gap: spacing.sm },
-  header: { gap: spacing.md, marginBottom: spacing.lg },
-  title: { color: colors.text, fontSize: 28, fontWeight: "900" },
-  section: { color: colors.text, fontSize: 19, fontWeight: "900", marginTop: spacing.sm },
 });

@@ -24,21 +24,21 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [password, setPassword] = useState("");
 
   const [confirm, setConfirm] = useState("");
-  const [submitted, setSubmitted] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const emailOk = EMAIL_REGEX.test(email.trim());
   const passwordOk = password.length >= MIN_PASSWORD_LENGTH;
   const isValid = emailOk && passwordOk && (!register || confirm === password);
 
-  const submit = async () => {
-    setSubmitted(true);
+  const handleSubmit = async () => {
+    setIsSubmitted(true);
 
-    if (!isValid || busy) {
+    if (!isValid || isSubmitting) {
       return;
     }
 
-    setBusy(true);
+    setIsSubmitting(true);
     try {
       const { auth, db } = requireFirebase();
 
@@ -68,7 +68,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         firebaseErrorMessage(error),
       );
     } finally {
-      setBusy(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -98,7 +98,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           keyboardType="email-address"
           autoCapitalize="none"
           autoComplete="email"
-          error={submitted && !emailOk ? "Unesite ispravnu e-mail adresu." : undefined}
+          error={isSubmitted && !emailOk ? "Unesite ispravnu e-mail adresu." : undefined}
         />
         <Field
           label="Lozinka"
@@ -107,7 +107,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           secureTextEntry
           autoComplete={register ? "new-password" : "current-password"}
           error={
-            submitted && !passwordOk
+            isSubmitted && !passwordOk
               ? `Lozinka mora imati najmanje ${MIN_PASSWORD_LENGTH} znakova.`
               : undefined
           }
@@ -118,14 +118,14 @@ export function AuthForm({ mode }: AuthFormProps) {
             value={confirm}
             onChangeText={setConfirm}
             secureTextEntry
-            error={submitted && confirm !== password ? "Lozinke se ne podudaraju." : undefined}
+            error={isSubmitted && confirm !== password ? "Lozinke se ne podudaraju." : undefined}
           />
         ) : null}
         <PrimaryButton
           title={register ? "Registriraj se" : "Prijavi se"}
-          busy={busy}
+          busy={isSubmitting}
           disabled={!isFirebaseConfigured}
-          onPress={submit}
+          onPress={handleSubmit}
         />
         <Text style={styles.switch}>
           {register ? "Već imaš račun? " : "Nemaš račun? "}

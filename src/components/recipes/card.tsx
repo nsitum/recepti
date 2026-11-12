@@ -3,9 +3,21 @@ import { FoodImage } from "@/components/ui";
 import { colors, radius, spacing } from "@/theme/app-theme";
 import type { Recipe } from "@/data/types";
 
-export function RecipeCard({ recipe, onPress }: { recipe: Recipe; onPress: () => void }) {
+type RecipeCardProps = {
+  recipe: Recipe;
+  onPress: (recipeId: string) => void;
+};
+
+export function RecipeCard({ recipe, onPress }: RecipeCardProps) {
+  const handlePress = () => {
+    onPress(recipe.id);
+  };
+
   return (
-    <Pressable style={({ pressed }) => [styles.card, pressed && styles.pressed]} onPress={onPress}>
+    <Pressable
+      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      onPress={handlePress}
+    >
       <FoodImage uri={recipe.imageUrl} style={styles.image} />
       <View style={styles.body}>
         <Text style={styles.title}>{recipe.title}</Text>
