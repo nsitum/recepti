@@ -1,4 +1,5 @@
 import { Field, InfoBanner, PrimaryButton } from "@/components/ui";
+import { EMAIL_REGEX, MIN_PASSWORD_LENGTH } from "@/constants";
 import { isFirebaseConfigured, requireFirebase } from "@/lib/firebase";
 import { firebaseErrorMessage } from "@/lib/firebase-errors";
 import { colors, spacing } from "@/theme/app-theme";
@@ -26,36 +27,38 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [submitted, setSubmitted] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  const emailOk = /^\S+@\S+\.\S+$/.test(email.trim());
-  const passwordOk = password.length >= 6;
-  const valid = emailOk && passwordOk && (!register || confirm === password);
+  const emailOk = EMAIL_REGEX.test(email.trim());
+  const passwordOk = password.length >= MIN_PASSWORD_LENGTH;
+  const isValid = emailOk && passwordOk && (!register || confirm === password);
 
   const submit = async () => {
     setSubmitted(true);
 
-    if (!valid || busy) {
+    if (!isValid || busy) {
       return;
     }
 
     setBusy(true);
     try {
       const { auth, db } = requireFirebase();
-      if (register) {
-        const result = await createUserWithEmailAndPassword(auth, email.trim(), password);
-        try {
-          await setDoc(doc(db, "users", result.user.uid), {
-            email: result.user.email,
-            role: "user",
-            createdAt: serverTimestamp(),
-          });
-        } catch (profileError) {
-          await deleteUser(result.user);
-          throw profileError;
-        }
-      }
 
       if (!register) {
         await signInWithEmailAndPassword(auth, email.trim(), password);
+        router.dismissAll();
+        return;
+      }
+
+      const result = await createUserWithEmailAndPassword(auth, email.trim(), password);
+
+      try {
+        await setDoc(doc(db, "users", result.user.uid), {
+          email: result.user.email,
+          role: "user",
+          createdAt: serverTimestamp(),
+        });
+      } catch (profileError) {
+        await deleteUser(result.user);
+        throw profileError;
       }
 
       router.dismissAll();
@@ -103,7 +106,11 @@ export function AuthForm({ mode }: AuthFormProps) {
           onChangeText={setPassword}
           secureTextEntry
           autoComplete={register ? "new-password" : "current-password"}
-          error={submitted && !passwordOk ? "Lozinka mora imati najmanje 6 znakova." : undefined}
+          error={
+            submitted && !passwordOk
+              ? `Lozinka mora imati najmanje ${MIN_PASSWORD_LENGTH} znakova.`
+              : undefined
+          }
         />
         {register ? (
           <Field
