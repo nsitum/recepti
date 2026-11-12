@@ -1,18 +1,14 @@
+import { CategoryCard } from "@/components/categories/card";
 import { CategoriesFooter } from "@/components/categories/footer";
 import { CategoriesHeader } from "@/components/categories/header";
 import { EmptyState, LoadingState } from "@/components/ui";
-import { CategoryCard } from "@/components/categories/card";
 import { useAuth } from "@/contexts/auth-context";
 import { recipeRepository } from "@/data/recipe-repository";
 import type { Category } from "@/data/types";
 import { colors, spacing } from "@/theme/app-theme";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import {
-  FlatList,
-  RefreshControl,
-  StyleSheet,
-} from "react-native";
+import { FlatList, RefreshControl, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
