@@ -12,30 +12,34 @@ import {
   View,
 } from "react-native";
 import { EmptyState, Field, LoadingState, PrimaryButton } from "@/components/ui";
+import { HTTPS_URL_REGEX } from "@/constants";
 import { useAuth } from "@/contexts/auth-context";
 import { recipeRepository } from "@/data/recipe-repository";
 import type { Category, Recipe } from "@/data/types";
 import { firebaseErrorMessage } from "@/lib/firebase-errors";
 import { colors, radius, spacing } from "@/theme/app-theme";
 
-export function RecipeForm({
-  recipe,
-  initialCategoryId,
-}: {
+type RecipeFormProps = {
   recipe?: Recipe;
   initialCategoryId?: string;
-}) {
+};
+
+export function RecipeForm({ recipe, initialCategoryId }: RecipeFormProps) {
   const { user, role, loading: authLoading } = useAuth();
+
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryId, setCategoryId] = useState(recipe?.categoryId ?? initialCategoryId ?? "");
+
   const [title, setTitle] = useState(recipe?.title ?? "");
   const [description, setDescription] = useState(recipe?.description ?? "");
   const [imageUrl, setImageUrl] = useState(recipe?.imageUrl ?? "");
   const [picker, setPicker] = useState(false);
+
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [loadError, setLoadError] = useState("");
+
   const loadCategories = () => {
     setLoadError("");
     setLoading(true);
@@ -45,6 +49,7 @@ export function RecipeForm({
       .catch((error) => setLoadError(firebaseErrorMessage(error)))
       .finally(() => setLoading(false));
   };
+
   useEffect(() => {
     void recipeRepository
       .getCategories()
@@ -52,25 +57,51 @@ export function RecipeForm({
       .catch((error) => setLoadError(firebaseErrorMessage(error)))
       .finally(() => setLoading(false));
   }, []);
-  if (loading || authLoading) return <LoadingState />;
-  if (!user)
+
+  if (loading || authLoading) {
+    return <LoadingState />;
+  }
+
+  if (!user) {
     return (
       <EmptyState title="Prijava je potrebna" message="Prijavi se kako bi mogao dodati recept." />
     );
-  if (recipe && role !== "admin")
+  }
+
+  if (recipe && role !== "admin") {
     return (
       <EmptyState
         title="Pristup nije dopušten"
         message="Samo administrator može uređivati recepte."
       />
     );
+  }
+
   const selected = categories.find((item) => item.id === categoryId);
-  const httpsOk = /^https:\/\/\S+$/i.test(imageUrl.trim());
-  const valid = Boolean(selected && title.trim() && description.trim() && httpsOk);
+  const isHttpsUrlValid = HTTPS_URL_REGEX.test(imageUrl.trim());
+  const isValid = Boolean(selected && title.trim() && description.trim() && isHttpsUrlValid);
+
+  const handleUpdateSuccessPress = () => {
+    if (!recipe) {
+      return;
+    }
+
+    router.replace({ pathname: "/recipe/[id]", params: { id: recipe.id } });
+  };
+
+  const handleCreateSuccessPress = () => {
+    router.replace({ pathname: "/category/[id]", params: { id: categoryId } });
+  };
+
   const submit = async () => {
     setSubmitted(true);
-    if (!valid || !selected || busy) return;
+
+    if (!isValid || !selected || busy) {
+      return;
+    }
+
     setBusy(true);
+
     try {
       const input = {
         categoryId,
@@ -78,37 +109,41 @@ export function RecipeForm({
         description: description.trim(),
         imageUrl: imageUrl.trim(),
       };
+
       if (recipe) {
         await recipeRepository.updateRecipe(recipe.id, input);
         Alert.alert("Promjene su spremljene", "Recept je uspješno ažuriran.", [
           {
             text: "U redu",
-            onPress: () => router.replace({ pathname: "/recipe/[id]", params: { id: recipe.id } }),
+            onPress: handleUpdateSuccessPress,
           },
         ]);
-      } else {
-        await recipeRepository.createRecipe(input, user.uid, user.email ?? "Nepoznati korisnik");
-        Alert.alert("Recept je objavljen", `Recept je dodan u kategoriju „${selected.name}”.`, [
-          {
-            text: "U redu",
-            onPress: () =>
-              router.replace({ pathname: "/category/[id]", params: { id: categoryId } }),
-          },
-        ]);
+        return;
       }
+
+      await recipeRepository.createRecipe(input, user.uid, user.email ?? "Nepoznati korisnik");
+      Alert.alert("Recept je objavljen", `Recept je dodan u kategoriju „${selected.name}”.`, [
+        {
+          text: "U redu",
+          onPress: handleCreateSuccessPress,
+        },
+      ]);
     } catch (error) {
       Alert.alert("Spremanje nije uspjelo", firebaseErrorMessage(error));
     } finally {
       setBusy(false);
     }
   };
-  if (loadError)
+
+  if (loadError) {
     return (
       <View style={styles.center}>
         <EmptyState title="Kategorije nisu učitane" message={loadError} />
         <PrimaryButton title="Pokušaj ponovno" onPress={loadCategories} />
       </View>
     );
+  }
+
   return (
     <KeyboardAvoidingView
       style={styles.flex}
@@ -160,7 +195,7 @@ export function RecipeForm({
           autoCorrect={false}
           keyboardType="url"
           placeholder="https://..."
-          error={submitted && !httpsOk ? "Unesite ispravan HTTPS URL." : undefined}
+          error={submitted && !isHttpsUrlValid ? "Unesite ispravan HTTPS URL." : undefined}
         />
         <PrimaryButton
           title={recipe ? "Spremi promjene" : "Objavi recept"}
@@ -196,6 +231,7 @@ export function RecipeForm({
     </KeyboardAvoidingView>
   );
 }
+
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   center: { flex: 1, padding: spacing.lg, justifyContent: "center", gap: spacing.md },
