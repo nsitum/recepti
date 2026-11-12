@@ -2,15 +2,15 @@ import { StyleSheet, Text, View } from "react-native";
 import { colors, radius, spacing } from "@/theme/app-theme";
 import { PrimaryButton } from "@/components/ui";
 
-type CategoriesFooterProps = {
+type HomeFooterProps = {
   isAuthenticated: boolean;
   onPress: () => void;
 };
 
-export function CategoriesFooter({
+export function HomeFooter({
   isAuthenticated,
   onPress,
-}: CategoriesFooterProps) {
+}: HomeFooterProps) {
   return (
     <View style={styles.footer}>
       <Text style={styles.title}>Imaš recept za podijeliti?</Text>

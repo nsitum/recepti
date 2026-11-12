@@ -2,19 +2,19 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { colors, radius, spacing } from "@/theme/app-theme";
 import { AuthLinks } from "@/components/ui";
 
-type CategoriesHeaderProps = {
+type HomeHeaderProps = {
   error: string;
   isAdmin: boolean;
   onRetry: () => void;
   onOpenAdmin: () => void;
 };
 
-export function CategoriesHeader({
+export function HomeHeader({
   error,
   isAdmin,
   onRetry,
   onOpenAdmin,
-}: CategoriesHeaderProps) {
+}: HomeHeaderProps) {
   return (
     <View style={styles.header}>
       <View style={styles.top}>

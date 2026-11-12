@@ -1,6 +1,6 @@
 import { CategoryCard } from "@/components/categories/card";
-import { CategoriesFooter } from "@/components/categories/footer";
-import { CategoriesHeader } from "@/components/categories/header";
+import { HomeFooter } from "@/components/home/footer";
+import { HomeHeader } from "@/components/home/header";
 import { EmptyState, LoadingState } from "@/components/ui";
 import { useAuth } from "@/contexts/auth-context";
 import { recipeRepository } from "@/data/recipe-repository";
@@ -64,7 +64,7 @@ export default function HomeScreen() {
           />
         }
         ListHeaderComponent={
-          <CategoriesHeader
+          <HomeHeader
             error={error}
             isAdmin={role === "admin"}
             onRetry={() => void load()}
@@ -89,7 +89,7 @@ export default function HomeScreen() {
           />
         )}
         ListFooterComponent={
-          <CategoriesFooter
+          <HomeFooter
             isAuthenticated={Boolean(user)}
             onPress={() => router.push(user ? "/recipe/new" : "/auth/login")}
           />
