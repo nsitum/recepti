@@ -21,7 +21,7 @@ Expo u mobilni bundle ugrađuje `EXPO_PUBLIC_` vrijednosti. To nisu administrato
 
 ## Model podataka
 
-- `categories/{categoryId}`: `name`, `emoji`, `description`, `createdAt`
+- `categories/{categoryId}`: `name`, `emoji`, `description`, `sortOrder`, `createdAt`
 - `recipes/{recipeId}`: `categoryId`, `title`, `description`, `imageUrl`, `authorId`, `authorEmail`, `createdAt`, `updatedAt`
 - `ratings/{recipeId}_{uid}`: `recipeId`, `userId`, `value`, `updatedAt`
 - `users/{uid}`: `email`, `role`, `createdAt`
@@ -48,6 +48,16 @@ npm run seed
 ```
 
 Ponovno pokretanje `npm run seed` sigurno je: postojeći seed i korisnički dokumenti ostaju netaknuti.
+
+Za usklađivanje već seedane baze s redoslijedom kategorija i zasebnim URL-ovima slika pokrenite:
+
+```powershell
+$env:GOOGLE_APPLICATION_CREDENTIALS = 'C:\sigurna-lokacija\firebase-admin.json'
+$env:FIREBASE_PROJECT_ID = 'recepti-d3fde'
+npm run migrate:data
+```
+
+Migracija je ponovljiva. Ažurira samo osam poznatih kategorija i postojeće dokumente seed recepata; ne mijenja korisničke recepte ni ocjene.
 
 ## Administratorska uloga
 

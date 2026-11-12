@@ -46,6 +46,7 @@
     "lint": "expo lint",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\"",
+    "migrate:data": "node scripts/migrate-firestore.mjs",
     "seed": "node scripts/seed-firestore.mjs"
   },
   "private": true

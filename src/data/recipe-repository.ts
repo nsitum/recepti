@@ -34,6 +34,7 @@ const categoryFromDoc = (id: string, data: DocumentData): Category => ({
   name: String(data.name ?? ""),
   emoji: String(data.emoji ?? DEFAULT_CATEGORY_EMOJI),
   description: String(data.description ?? ""),
+  sortOrder: Number(data.sortOrder ?? Number.MAX_SAFE_INTEGER),
 });
 const recipeFromDoc = (id: string, data: DocumentData): Recipe => ({
   id,
@@ -50,8 +51,9 @@ const recipeFromDoc = (id: string, data: DocumentData): Recipe => ({
 export const recipeRepository: RecipeRepository = {
   async getCategories() {
     const { db } = requireFirebase();
-    const snapshot = await getDocs(query(collection(db, "categories"), orderBy("name")));
-    return snapshot.docs.map((item) => categoryFromDoc(item.id, item.data()));
+    const snapshot = await getDocs(collection(db, "categories"));
+    const categories = snapshot.docs.map((item) => categoryFromDoc(item.id, item.data()));
+    return categories.sort((first, second) => first.sortOrder - second.sortOrder);
   },
   async getCategory(id) {
     const { db } = requireFirebase();
@@ -107,6 +109,7 @@ export const recipeRepository: RecipeRepository = {
     const { db } = requireFirebase();
     const result = await addDoc(collection(db, "categories"), {
       ...input,
+      sortOrder: Date.now(),
       createdAt: serverTimestamp(),
     });
     return result.id;

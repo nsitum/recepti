@@ -1,4 +1,10 @@
-export type Category = { id: string; name: string; emoji: string; description: string };
+export type Category = {
+  id: string;
+  name: string;
+  emoji: string;
+  description: string;
+  sortOrder: number;
+};
 export type Recipe = {
   id: string;
   categoryId: string;

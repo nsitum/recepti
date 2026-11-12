@@ -4,9 +4,10 @@ service cloud.firestore {
     function signedIn() { return request.auth != null; }
     function isAdmin() { return signedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'; }
     function validCategory(data) {
-      return data.keys().hasOnly(['name', 'emoji', 'description', 'createdAt'])
+      return data.keys().hasOnly(['name', 'emoji', 'description', 'sortOrder', 'createdAt'])
         && data.name is string && data.name.size() > 0 && data.name.size() <= 80
         && data.emoji is string && data.description is string
+        && data.sortOrder is int
         && data.createdAt is timestamp;
     }
     function validRecipe(data) {
