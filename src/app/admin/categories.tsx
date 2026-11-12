@@ -1,69 +1,116 @@
 import { useCallback, useEffect, useState } from "react";
 import { Alert, FlatList, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { EmptyState, Field, InfoBanner, LoadingState, PrimaryButton } from "@/components/ui";
+import { AdminCategoryItem } from "@/components/admin/categories/item";
+import {
+  EmptyState,
+  ErrorState,
+  Field,
+  InfoBanner,
+  LoadingState,
+  PrimaryButton,
+} from "@/components/ui";
+import { DEFAULT_CATEGORY_EMOJI, MAX_CATEGORY_NAME_LENGTH } from "@/constants";
 import { useAuth } from "@/contexts/auth-context";
 import { recipeRepository } from "@/data/recipe-repository";
 import type { Category } from "@/data/types";
 import { firebaseErrorMessage } from "@/lib/firebase-errors";
-import { colors, radius, spacing } from "@/theme/app-theme";
+import { colors, spacing } from "@/theme/app-theme";
 
 export default function CategoriesAdminScreen() {
   const { role, loading: authLoading } = useAuth();
-  const [items, setItems] = useState<Category[]>([]);
-  const [name, setName] = useState("");
-  const [emoji, setEmoji] = useState("🍽️");
-  const [description, setDescription] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(false);
-  const [deletingId, setDeletingId] = useState("");
-  const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState("");
 
-  const load = useCallback(async () => {
-    setError("");
-    setLoading(true);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoryName, setCategoryName] = useState("");
+  const [categoryEmoji, setCategoryEmoji] = useState(DEFAULT_CATEGORY_EMOJI);
+  const [categoryDescription, setCategoryDescription] = useState("");
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [deletingCategoryId, setDeletingCategoryId] = useState("");
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  const [loadError, setLoadError] = useState("");
+
+  const loadCategories = useCallback(async () => {
+    setLoadError("");
+    setIsLoading(true);
+
     try {
-      setItems(await recipeRepository.getCategories());
+      const loadedCategories = await recipeRepository.getCategories();
+      setCategories(loadedCategories);
     } catch (reason) {
-      setError(firebaseErrorMessage(reason));
+      setLoadError(firebaseErrorMessage(reason));
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   }, []);
+
   useEffect(() => {
     recipeRepository
       .getCategories()
-      .then(setItems)
-      .catch((reason) => setError(firebaseErrorMessage(reason)))
-      .finally(() => setLoading(false));
+      .then(setCategories)
+      .catch((reason) => setLoadError(firebaseErrorMessage(reason)))
+      .finally(() => setIsLoading(false));
   }, []);
-  if (loading || authLoading) return <LoadingState />;
-  if (role !== "admin")
+
+  const handleRetryPress = () => {
+    void loadCategories();
+  };
+
+  if (isLoading || authLoading) {
+    return <LoadingState />;
+  }
+
+  if (role !== "admin") {
     return (
       <EmptyState
         title="Pristup nije dopušten"
         message="Upravljanje kategorijama dostupno je samo administratoru."
       />
     );
+  }
 
-  const add = async () => {
-    setSubmitted(true);
-    const cleanName = name.trim();
-    const cleanEmoji = emoji.trim();
-    if (!cleanName || cleanName.length > 80 || !cleanEmoji || busy) return;
-    setBusy(true);
+  if (loadError) {
+    return (
+      <SafeAreaView style={styles.safe} edges={["left", "right", "bottom"]}>
+        <ErrorState
+          title="Kategorije nisu učitane"
+          message={loadError}
+          onRetry={handleRetryPress}
+        />
+      </SafeAreaView>
+    );
+  }
+
+  const handleAddCategory = async () => {
+    setIsSubmitted(true);
+
+    const cleanName = categoryName.trim();
+    const cleanEmoji = categoryEmoji.trim();
+    const isNameValid = cleanName.length > 0 && cleanName.length <= MAX_CATEGORY_NAME_LENGTH;
+
+    if (!isNameValid || !cleanEmoji || isSaving) {
+      return;
+    }
+
+    setIsSaving(true);
+
     try {
       await recipeRepository.createCategory({
         name: cleanName,
         emoji: cleanEmoji,
-        description: description.trim(),
+        description: categoryDescription.trim(),
       });
-      setName("");
-      setEmoji("🍽️");
-      setDescription("");
-      setSubmitted(false);
-      await load();
+
+      setCategoryName("");
+      setCategoryEmoji(DEFAULT_CATEGORY_EMOJI);
+      setCategoryDescription("");
+      setIsSubmitted(false);
+
+      await loadCategories();
+
       Alert.alert(
         "Kategorija je dodana",
         `Kategorija „${cleanName}” sada je dostupna u aplikaciji.`,
@@ -71,36 +118,49 @@ export default function CategoriesAdminScreen() {
     } catch (reason) {
       Alert.alert("Dodavanje nije uspjelo", firebaseErrorMessage(reason));
     } finally {
-      setBusy(false);
+      setIsSaving(false);
     }
   };
-  const remove = async (item: Category) => {
-    if (deletingId) return;
-    setDeletingId(item.id);
+
+  const handleDeleteCategory = async (category: Category) => {
+    if (deletingCategoryId) {
+      return;
+    }
+
+    setDeletingCategoryId(category.id);
+
     try {
-      await recipeRepository.deleteCategory(item.id);
-      setItems((current) => current.filter((category) => category.id !== item.id));
+      await recipeRepository.deleteCategory(category.id);
+      setCategories((currentCategories) =>
+        currentCategories.filter((currentCategory) => currentCategory.id !== category.id),
+      );
       Alert.alert("Kategorija je obrisana", "Obrisani su i svi pripadajući recepti i ocjene.");
     } catch (reason) {
       Alert.alert("Brisanje nije uspjelo", firebaseErrorMessage(reason));
     } finally {
-      setDeletingId("");
+      setDeletingCategoryId("");
     }
   };
-  const confirmRemove = (item: Category) =>
+
+  const handleDeleteCategoryPress = (category: Category) => {
     Alert.alert(
       "Obrisati kategoriju?",
-      `Trajno će se obrisati kategorija „${item.name}”, svi njezini recepti i sve njihove ocjene. Ovu radnju nije moguće poništiti.`,
+      `Trajno će se obrisati kategorija „${category.name}”, svi njezini recepti i sve njihove ocjene. Ovu radnju nije moguće poništiti.`,
       [
         { text: "Odustani", style: "cancel" },
-        { text: "Obriši sve", style: "destructive", onPress: () => void remove(item) },
+        {
+          text: "Obriši sve",
+          style: "destructive",
+          onPress: () => void handleDeleteCategory(category),
+        },
       ],
     );
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={["left", "right", "bottom"]}>
       <FlatList
-        data={items}
+        data={categories}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.content}
         ListHeaderComponent={
@@ -109,73 +169,48 @@ export default function CategoriesAdminScreen() {
             <InfoBanner title="Pažljivo s brisanjem">
               Brisanje kategorije trajno uklanja sve njezine recepte i njihove ocjene.
             </InfoBanner>
-            {error ? (
-              <View style={styles.errorBox}>
-                <Text style={styles.error}>{error}</Text>
-                <PrimaryButton
-                  title="Pokušaj ponovno"
-                  variant="outline"
-                  onPress={() => void load()}
-                />
-              </View>
-            ) : null}
             <Field
               label="Naziv nove kategorije"
-              value={name}
-              onChangeText={setName}
+              value={categoryName}
+              onChangeText={setCategoryName}
               placeholder="npr. Brza jela"
               error={
-                submitted && (!name.trim() || name.trim().length > 80)
-                  ? "Unesite naziv do 80 znakova."
+                isSubmitted &&
+                (!categoryName.trim() || categoryName.trim().length > MAX_CATEGORY_NAME_LENGTH)
+                  ? `Unesite naziv do ${MAX_CATEGORY_NAME_LENGTH} znakova.`
                   : undefined
               }
             />
             <Field
               label="Emoji"
-              value={emoji}
-              onChangeText={setEmoji}
-              placeholder="🍽️"
-              error={submitted && !emoji.trim() ? "Unesite emoji ili simbol." : undefined}
+              value={categoryEmoji}
+              onChangeText={setCategoryEmoji}
+              placeholder={DEFAULT_CATEGORY_EMOJI}
+              error={isSubmitted && !categoryEmoji.trim() ? "Unesite emoji ili simbol." : undefined}
             />
             <Field
               label="Opis (neobavezno)"
-              value={description}
-              onChangeText={setDescription}
+              value={categoryDescription}
+              onChangeText={setCategoryDescription}
               placeholder="Kratak opis kategorije"
             />
-            <PrimaryButton title="Dodaj kategoriju" busy={busy} onPress={() => void add()} />
+            <PrimaryButton title="Dodaj kategoriju" busy={isSaving} onPress={handleAddCategory} />
             <Text style={styles.section}>Postojeće kategorije</Text>
           </View>
         }
         ListEmptyComponent={
-          !error ? (
-            <EmptyState
-              title="Nema kategorija"
-              message="Dodajte prvu kategoriju pomoću obrasca iznad."
-            />
-          ) : undefined
+          <EmptyState
+            title="Nema kategorija"
+            message="Dodajte prvu kategoriju pomoću obrasca iznad."
+          />
         }
         renderItem={({ item }) => (
-          <View style={styles.row}>
-            <View style={styles.nameRow}>
-              <Text style={styles.emoji}>{item.emoji}</Text>
-              <View style={styles.nameBlock}>
-                <Text style={styles.name}>{item.name}</Text>
-                {item.description ? (
-                  <Text numberOfLines={2} style={styles.description}>
-                    {item.description}
-                  </Text>
-                ) : null}
-              </View>
-            </View>
-            <PrimaryButton
-              title="Obriši"
-              variant="danger"
-              busy={deletingId === item.id}
-              disabled={Boolean(deletingId)}
-              onPress={() => confirmRemove(item)}
-            />
-          </View>
+          <AdminCategoryItem
+            category={item}
+            isDeleting={deletingCategoryId === item.id}
+            isDeleteDisabled={Boolean(deletingCategoryId)}
+            onDeletePress={handleDeleteCategoryPress}
+          />
         )}
       />
     </SafeAreaView>
@@ -187,24 +222,4 @@ const styles = StyleSheet.create({
   header: { gap: spacing.md, marginBottom: spacing.lg },
   title: { color: colors.text, fontSize: 28, fontWeight: "900" },
   section: { color: colors.text, fontSize: 19, fontWeight: "900", marginTop: spacing.sm },
-  errorBox: { gap: spacing.sm },
-  error: { color: colors.danger },
-  row: {
-    minHeight: 84,
-    padding: spacing.sm,
-    paddingLeft: spacing.md,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.sm,
-  },
-  nameRow: { flex: 1, flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  nameBlock: { flex: 1, gap: spacing.xs },
-  emoji: { fontSize: 24 },
-  name: { color: colors.text, fontWeight: "800" },
-  description: { color: colors.textMuted, fontSize: 12, lineHeight: 17 },
 });
