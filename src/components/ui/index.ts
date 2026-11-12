@@ -1,5 +1,6 @@
 export { AuthLinks } from "./auth-links";
 export { EmptyState } from "./empty-state";
+export { ErrorState } from "./error-state";
 export { Field } from "./field";
 export { FoodImage } from "./food-image";
 export { InfoBanner } from "./info-banner";
